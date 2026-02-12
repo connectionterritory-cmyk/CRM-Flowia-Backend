@@ -3,7 +3,7 @@
 **CRM MVP en español, mobile-first** para gestión de clientes, cuentas por cobrar, órdenes, pagos y seguimiento.
 
 ## Tecnologías
-- **Backend**: Node.js + Express + SQLite
+- **Backend**: Node.js + Express + Postgres (Supabase)
 - **Frontend**: React (Vite) + Tailwind CSS
 
 ## Instalación y Ejecución
@@ -25,6 +25,14 @@
    ```
    - Frontend and Backend ports are assigned dynamically if defaults (5173/3000) are in use.
    - Check the console output for the actual URLs.
+
+## Environment Variables (Supabase)
+
+For production, database credentials live in Supabase and are injected into the backend environment at runtime.
+
+- Set `SUPABASE_DB_URL` in the backend environment (Supabase direct connection URI).
+- Optional: `DB_SSL=false` to disable SSL (default is SSL on).
+- Keep `.env` local only; it is ignored by git.
 
 ## Troubleshooting
 
@@ -71,11 +79,12 @@ This will verify:
    - Node version: `18.20.8`
    - Startup file: `src/server.js`
 3. Environment variables:
-   - `NODE_ENV=production`
-   - `DB_PATH=./crm.db`
-   - `CORS_ORIGIN=https://crm.flowiadigital.com`
-   - `JWT_SECRET=<secret>`
-   - `JWT_EXPIRATION=8h`
+    - `NODE_ENV=production`
+    - `SUPABASE_DB_URL=<supabase_connection_url>`
+    - `DB_SSL=false` (optional)
+    - `CORS_ORIGIN=https://crm.flowiadigital.com`
+    - `JWT_SECRET=<secret>`
+    - `JWT_EXPIRATION=8h`
 4. Install dependencies:
    ```bash
    source /home/flowwvlz/nodevenv/api.flowiadigital.com/18/bin/activate
