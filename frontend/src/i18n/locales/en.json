@@ -1,0 +1,563 @@
+{
+  "app": {
+    "title": "FlowSuiteCrm",
+    "brand": "FlowSuite",
+    "tagline": "CRM"
+  },
+  "common": {
+    "language": "Language",
+    "search": "Search",
+    "clear": "Clear",
+    "loading": "Loading...",
+    "noResults": "No results",
+    "required": "{{field}} is required",
+    "error": "Something went wrong",
+    "select": "Select",
+    "save": "Save",
+    "saving": "Saving...",
+    "cancel": "Cancel",
+    "yes": "Yes",
+    "no": "No",
+    "active": "Active",
+    "inactive": "Inactive"
+  },
+  "header": {
+    "searchPlaceholder": "Search prospects, customers, or invoices...",
+    "expandSidebar": "Expand menu",
+    "collapseSidebar": "Collapse menu",
+    "profile": "My profile"
+  },
+  "nav": {
+    "dashboard": "Dashboard",
+    "contacts": "Contacts",
+    "opportunities": "Opportunities",
+    "programs": "Programs",
+    "customers": "Customers",
+    "salesServices": "Sales and Services",
+    "import": "Import",
+    "internalNotes": "Internal Notes",
+    "team": "Team",
+    "settings": "Settings",
+    "more": "More"
+  },
+  "navDesc": {
+    "dashboard": "Business snapshot in 30 seconds",
+    "contacts": "Prospects and referrals not purchased",
+    "opportunities": "Active sales pipeline",
+    "programs": "Incentives and rewards progress",
+    "customers": "People who already purchased",
+    "salesServices": "Orders, services, delivery, billing",
+    "import": "Bulk CSV operations",
+    "internalNotes": "Collections, legal, warnings",
+    "team": "Users, roles and active sellers",
+    "settings": "Admin configuration"
+  },
+  "menu": {
+    "dashboard": "Dashboard",
+    "contacts": "Contacts",
+    "opportunities": "Opportunities",
+    "programs": "Programs",
+    "customers": "Customers",
+    "salesServices": "Sales and Services",
+    "import": "Import",
+    "internalNotes": "Internal Notes",
+    "team": "Team",
+    "settings": "Settings",
+    "desc": {
+      "dashboard": "Business snapshot in 30 seconds",
+      "contacts": "Prospects and referrals not purchased",
+      "opportunities": "Active sales pipeline",
+      "programs": "Incentives and rewards progress",
+      "customers": "People who already purchased",
+      "salesServices": "Orders, services, delivery, billing",
+      "import": "Bulk CSV operations",
+      "internalNotes": "Collections, legal, warnings",
+      "team": "Commercial users and roles",
+      "settings": "Admin configuration"
+    }
+  },
+  "pages": {
+    "contactsTitle": "Contacts",
+    "contactsSubtitle": "Unconverted prospects and referrals",
+    "newContactTitle": "New contact",
+    "contactTitle": "Contact",
+    "opportunitiesTitle": "Opportunities",
+    "opportunitiesSubtitle": "View and manage your sales flow in real time.",
+    "opportunitiesBadge": "Sales",
+    "opportunitiesBoard": "Board",
+    "opportunitiesMetrics": "Metrics",
+    "importTitle": "Import data",
+    "importSubtitle": "Bulk load information through CSV files.",
+    "settingsTitle": "Settings",
+    "settingsSubtitle": "Admin configuration for users, catalogs, origins, and statuses.",
+    "settingsBody": "This section is reserved for admin configuration. Manage users, sellers, catalogs, origins, and statuses here.",
+    "settingsLogoutTitle": "Session",
+    "settingsLogoutDescription": "Sign out on this device.",
+    "settingsLogoutLoading": "Signing out...",
+    "telemarketingTitle": "Telemarketing",
+    "telemarketingSubtitle": "Prioritize calls, follow ups, and active referrals.",
+    "advisorTitle": "Advisor",
+    "advisorSubtitle": "Connect prospects, schedule demos, and close sales.",
+    "dashboardTitle": "Dashboard",
+    "loading": "Loading...",
+    "noAddress": "No address",
+    "noLocation": "No location details",
+    "contactCreateError": "Unable to create contact",
+    "contactSaveError": "Unable to save contact",
+    "contactNotFound": "Contact not found"
+  },
+  "roles": {
+    "admin": "Admin",
+    "telemarketing": "Telemarketing",
+    "asesor": "Advisor",
+    "advisor": "Advisor",
+    "manager": "Manager",
+    "distributor": "Distributor",
+    "user": "User"
+  },
+  "levels": {
+    "distributor": "Distributor",
+    "manager": "Manager",
+    "advisor": "Advisor",
+    "other": "Other"
+  },
+  "terminology": {
+    "admin": "Administrator",
+    "advisor": "Advisor",
+    "seller": "Seller",
+    "contact": "Contact",
+    "lead": "Lead",
+    "customer": "Customer",
+    "opportunity": "Opportunity",
+    "program": "Program",
+    "order": "Order",
+    "service": "Service"
+  },
+  "buttons": {
+    "newContact": "New contact",
+    "save": "Save",
+    "saving": "Saving...",
+    "cancel": "Cancel",
+    "edit": "Edit",
+    "view": "View",
+    "back": "Back",
+    "delete": "Delete",
+    "complete": "Complete",
+    "addReferral": "Add referral",
+    "assignToMe": "Assign to me",
+    "createContact": "Create contact",
+    "createNote": "Create note",
+    "showConverted": "Show converted",
+    "newOpportunity": "New opportunity",
+    "newUser": "New user",
+    "saveUser": "Save user",
+    "editUser": "Edit",
+    "contacts": "Contacts",
+    "pipeline": "Opportunities",
+    "customers": "Customers",
+    "programs": "Programs",
+    "sales": "Sales and services",
+    "uploadProcess": "Upload and process",
+    "uploading": "Uploading...",
+    "selectFile": "Click to select file",
+    "fileFormat": "CSV format (.csv)",
+    "logout": "Sign out"
+  },
+  "contacts": {
+    "title": "Contacts",
+    "subtitle": "Unconverted prospects and referrals",
+    "newTitle": "New contact",
+    "editTitle": "Edit contact",
+    "detailTitle": "Contact details",
+    "sections": {
+      "basic": "Quick",
+      "basicHelper": "Complete the minimum to save fast.",
+      "originReferral": "Origin and referrals",
+      "household": "Household qualification",
+      "notes": "Internal notes"
+    },
+    "helpers": {
+      "optional": "Optional",
+      "assignedHelper": "Pick an advisor or assign yourself.",
+      "assignedLocked": "Assignment locked for your role.",
+      "referredSearch": "Search contacts and customers first.",
+      "referredEmpty": "No results found."
+    },
+    "list": {
+      "emptyTitle": "No contacts yet",
+      "emptyDesc": "Add a new contact to get started.",
+      "showConverted": "Show converted",
+      "hideConverted": "Hide converted",
+      "filters": "Filters",
+      "filterAdvisor": "Seller",
+      "filterOrigin": "Origin",
+      "filterStatus": "Status",
+      "summaryTotal": "Contacts",
+      "summaryNew": "New",
+      "summaryConverted": "Converted",
+      "summaryVisible": "Visible"
+    },
+    "fields": {
+      "name": "Name",
+      "mobilePhone": "Mobile phone",
+      "email": "Email",
+      "cityState": "City/State",
+      "origin": "Origin",
+      "originCustom": "Custom origin",
+      "referredType": "Referral type",
+      "referredByName": "Referred by",
+      "referredSearch": "Search referral",
+      "referredBy": "Referred by",
+      "referredById": "Referred by (ID)",
+      "relationshipType": "Relationship",
+      "relationshipOther": "Relationship (other)",
+      "seller": "Seller",
+      "status": "Status",
+      "actions": "Actions",
+      "address1": "Address 1",
+      "address2": "Address 2",
+      "city": "City",
+      "state": "State",
+      "zipCode": "Zip",
+      "country": "Country",
+      "relationship": "Relationship to referrer",
+      "maritalStatus": "Marital status",
+      "spouseName": "Spouse name",
+      "homeOwnership": "Home ownership",
+      "bothWork": "Both work",
+      "knowsRoyal": "Knows Royal Prestige",
+      "hasChildren": "Has children",
+      "childrenCount": "Children count",
+      "assignedTo": "Assigned to",
+      "contactAllowed": "Contact allowed",
+      "maritalStatusOther": "Marital status (other)",
+      "notes": "Notes"
+    },
+    "placeholders": {
+      "name": "Full name",
+      "mobilePhone": "Mobile number",
+      "email": "email@example.com",
+      "address1": "Primary address",
+      "city": "City",
+      "state": "State",
+      "zipCode": "Zip",
+      "notes": "Write internal notes",
+      "referredById": "Contact/customer/user ID",
+      "relationship": "Relationship",
+      "originCustom": "Example: Local fair, partner, internal referrals",
+      "referredByName": "Referral name",
+      "referredSearch": "Search by name",
+      "relationshipOther": "Describe the relationship",
+      "maritalStatusOther": "Specify marital status",
+      "spouseName": "Spouse name",
+      "searchAssignee": "Search advisor",
+      "childrenCount": "Count"
+    },
+    "origin": {
+      "referido": "Referral",
+      "marketing": "Marketing",
+      "puerta_puerta": "Door to door",
+      "evento": "Event",
+      "programa": "Program",
+      "otro": "Other",
+      "no_dice": "Unknown"
+    },
+    "referredTypes": {
+      "amigo": "Friend",
+      "familia": "Family",
+      "cliente": "Customer",
+      "externo": "External",
+      "otro": "Other"
+    },
+    "enums": {
+      "marital": {
+        "soltero": "Single",
+        "casado": "Married",
+        "union_libre": "Common law",
+        "divorciado": "Divorced",
+        "viudo": "Widowed",
+        "no_dice": "Unknown",
+        "otro": "Other"
+      },
+      "homeOwnership": {
+        "dueno": "Owner",
+        "renta": "Rent",
+        "no_dice": "Unknown"
+      },
+      "bothWork": {
+        "trabaja_1": "One works",
+        "trabajan_2": "Both work",
+        "no_dice": "Unknown"
+      },
+      "knowsRoyal": {
+        "si": "Yes",
+        "no": "No",
+        "ha_escuchado": "Heard of",
+        "no_dice": "Unknown"
+      }
+    },
+    "household": {
+      "workSolo": "Only me",
+      "workBoth": "Both"
+    }
+  },
+  "users": {
+    "title": "Team",
+    "subtitle": "Manage users, roles and active sellers.",
+    "newTitle": "New user",
+    "editTitle": "Edit user",
+    "emptyTitle": "No users",
+    "emptySubtitle": "Add a user to get started.",
+    "fields": {
+      "full_name": "Full name",
+      "mobile": "Mobile",
+      "email": "Email",
+      "seller_code": "Seller code",
+      "role": "Role",
+      "level": "Level",
+      "start_date": "Start date",
+      "photo_url": "Photo (URL)",
+      "address1": "Address 1",
+      "address2": "Address 2",
+      "city": "City",
+      "state": "State",
+      "zip": "Zip",
+      "country": "Country",
+      "is_active": "Active",
+      "actions": "Actions"
+    },
+    "placeholders": {
+      "full_name": "Full name",
+      "mobile": "Mobile number",
+      "email": "email@company.com",
+      "seller_code": "DIS-0001",
+      "photo_url": "https://",
+      "search": "Search by name or code"
+    },
+    "filters": {
+      "allRoles": "All roles",
+      "allStatuses": "All statuses"
+    }
+  },
+  "status": {
+    "new": "New",
+    "contacted": "Contacted",
+    "qualified": "Qualified",
+    "appointmentScheduled": "Appointment scheduled",
+    "doNotContact": "Do not contact",
+    "notInterested": "Not interested",
+    "unknown": "Unknown"
+  },
+  "formSections": {
+    "basic": "Basic",
+    "address": "Address",
+    "originReferral": "Origin / Referral",
+    "qualification": "Qualification",
+    "assignment": "Assignment",
+    "notes": "Notes"
+  },
+  "forms": {
+    "sections": {
+      "basic": "Basic",
+      "address": "Address",
+      "originReferral": "Origin / Referral",
+      "qualification": "Qualification",
+      "assignment": "Assignment"
+    },
+    "required": "{{field}} is required",
+    "fields": {
+      "fullName": "Full name",
+      "mobilePhone": "Mobile phone",
+      "email": "Email",
+      "status": "Status",
+      "contactAllowed": "Contact allowed",
+      "address1": "Address 1",
+      "address2": "Address 2",
+      "city": "City",
+      "state": "State",
+      "zip": "Zip",
+      "country": "Country",
+      "originType": "Origin",
+      "referredByType": "Referred by (type)",
+      "referredById": "Referred by (ID)",
+      "relationship": "Relationship to referrer",
+      "maritalStatus": "Marital status",
+      "homeOwnership": "Home ownership",
+      "bothWork": "Both work",
+      "knowsRoyal": "Knows Royal Prestige",
+      "hasChildren": "Has children",
+      "childrenCount": "Children count",
+      "assignedTo": "Seller",
+      "notes": "Notes"
+    },
+    "placeholders": {
+      "referredById": "Contact/customer/user ID",
+      "select": "Select"
+    }
+  },
+  "tables": {
+    "name": "Name",
+    "mobile": "Mobile",
+    "cityState": "City/State",
+    "origin": "Origin",
+    "referredBy": "Referred by",
+    "seller": "Seller",
+    "status": "Status",
+    "actions": "Actions"
+  },
+  "dashboard": {
+    "overviewTitle": "Control panel",
+    "overviewSubtitle": "Overall summary of your portfolio and critical alerts.",
+    "last30Days": "Last 30 days",
+    "kpis": {
+      "customersDirectory": "Customers directory",
+      "activeAccounts": "{{count}} active accounts",
+      "totalPortfolio": "Total portfolio",
+      "pendingBalance": "Pending balance",
+      "overdue": "Overdue collections",
+      "urgent": "Urgent handling",
+      "communication": "Communication",
+      "followUpNotes": "Follow up notes"
+    },
+    "callsToday": "Calls today",
+    "firstContact": "Schedule your first contact.",
+    "activeProspects": "Active prospects",
+    "unconverted": "Unconverted contacts.",
+    "followUps": "Follow ups",
+    "pendingToday": "Pending today.",
+    "quickActions": "Quick actions",
+    "optimize": "Optimize your daily flow.",
+    "royalReferrals": "Royal referrals",
+    "activatePrograms": "Activate programs",
+    "promotePrograms": "Promote 20 and Win, 4 in 14, and events.",
+    "newOrder": "New order",
+    "scheduledDemos": "Scheduled demos",
+    "salesInProgress": "Sales in progress",
+    "monthlyGoal": "Monthly goal",
+    "priorityActions": "Priority actions",
+    "focusDay": "Focus your day on key steps.",
+    "boostPrograms": "Boost referrals and active programs to close faster.",
+    "explorePrograms": "Explore programs",
+    "topDebtorsTitle": "Top debtors",
+    "topDebtorsSubtitle": "Customers with highest outstanding balance",
+    "viewDirectory": "View full directory",
+    "totalDebt": "Total debt",
+    "general": "General",
+    "overdueAmount": "{{amount}} overdue",
+    "overdueLabel": "Overdue",
+    "currentLabel": "Current"
+  },
+  "alerts": {
+    "quickActions": "Quick actions",
+    "newCustomer": "New customer",
+    "newOrder": "New order",
+    "campaign": "Campaign",
+    "title": "Alerts and notices",
+    "allClearTitle": "All clear",
+    "allClearSubtitle": "No alerts pending review.",
+    "critical": "Critical",
+    "info": "Info",
+    "timeAgo": "{{time}} ago",
+    "resolve": "Resolve"
+  },
+  "charts": {
+    "revenueTrend": "Revenue trend",
+    "semiannual": "Semiannual comparison",
+    "portfolioDistribution": "Portfolio distribution",
+    "customerStatus": "Current customer status",
+    "total": "Total",
+    "active": "Active",
+    "inactive": "Inactive",
+    "new": "New",
+    "overdue": "Overdue"
+  },
+  "months": {
+    "jan": "Jan",
+    "feb": "Feb",
+    "mar": "Mar",
+    "apr": "Apr",
+    "may": "May",
+    "jun": "Jun",
+    "jul": "Jul"
+  },
+  "orders": {
+    "badge": "Operations",
+    "subtitle": "Complete management of services, billing, and delivery status.",
+    "newOrder": "New work order"
+  },
+  "customers": {
+    "subtitle": "Customer database management",
+    "searchPlaceholder": "Search customer...",
+    "newCustomer": "New customer",
+    "emptyTitle": "No customers yet",
+    "emptyDesc": "Create your first customer to start managing your portfolio.",
+    "noResultsTitle": "No customers found for this search",
+    "noResultsDesc": "Try another name, email, or status.",
+    "overdueAmount": "{{amount}} overdue",
+    "showing": "Showing {{shown}} of {{total}} customers",
+    "filters": {
+      "allStatuses": "All statuses"
+    },
+    "status": {
+      "active": "Active",
+      "overdue": "Overdue",
+      "inactive": "Inactive"
+    },
+    "columns": {
+      "name": "Name / Contact",
+      "location": "Location",
+      "status": "Status",
+      "balance": "Balance",
+      "actions": "Actions"
+    }
+  },
+  "notes": {
+    "subtitle": "Global activity and follow up log"
+  },
+  "programs": {
+    "subtitle": "20 and Win / 4 in 14 / Simple referrals",
+    "types": {
+      "20yGana": "20 and Win",
+      "4en14": "4 in 14",
+      "simple": "Simple referral"
+    },
+    "filters": {
+      "allTypes": "All types",
+      "allStatuses": "All statuses"
+    },
+    "status": {
+      "activo": "Active",
+      "pendiente": "Pending",
+      "completado": "Completed",
+      "expirado": "Expired",
+      "cancelado": "Canceled"
+    },
+    "table": {
+      "program": "Program",
+      "owner": "Owner",
+      "advisor": "Advisor",
+      "status": "Status",
+      "dates": "Dates",
+      "reward": "Reward"
+    },
+    "reward": {
+      "delivered": "Delivered",
+      "eligible": "Eligible",
+      "pending": "Pending"
+    }
+  },
+  "import": {
+    "cardTitle": "Import {{label}}",
+    "expectedFormat": "Expected format:",
+    "completed": "Import completed",
+    "processed": "Total processed: {{count}}",
+    "errors": "Errors ({{count}}):",
+    "more": "...and {{count}} more",
+    "uploadError": "Error uploading file",
+    "labels": {
+      "customers": "Customers",
+      "orders": "Orders",
+      "transactions": "Transactions"
+    }
+  }
+}

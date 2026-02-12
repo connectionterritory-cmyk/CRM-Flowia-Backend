@@ -1,0 +1,57 @@
+{
+  "app": {
+    "title": "FlowSuiteCrm",
+    "brand": "FlowSuite",
+    "tagline": "CRM"
+  },
+  "common": {
+    "active": "Ativo",
+    "inactive": "Inativo"
+  },
+  "nav": {
+    "team": "Equipe"
+  },
+  "menu": {
+    "team": "Equipe"
+  },
+  "users": {
+    "title": "Equipe",
+    "subtitle": "Gerencie usuarios e funcoes.",
+    "newTitle": "Novo usuario",
+    "editTitle": "Editar usuario",
+    "fields": {
+      "full_name": "Nome completo",
+      "mobile": "Celular",
+      "seller_code": "Codigo vendedor",
+      "role": "Funcao",
+      "level": "Nivel",
+      "is_active": "Ativo",
+      "actions": "Acoes"
+    },
+    "placeholders": {
+      "search": "Buscar por nome ou codigo"
+    },
+    "filters": {
+      "allRoles": "Todas as funcoes",
+      "allStatuses": "Todos os status"
+    }
+  },
+  "buttons": {
+    "newUser": "Novo usuario",
+    "saveUser": "Salvar usuario",
+    "editUser": "Editar"
+  },
+  "roles": {
+    "admin": "Admin",
+    "distributor": "Distribuidor",
+    "manager": "Gerente",
+    "advisor": "Assessor",
+    "telemarketing": "Telemarketing"
+  },
+  "levels": {
+    "distributor": "Distribuidor",
+    "manager": "Gerente",
+    "advisor": "Assessor",
+    "other": "Outro"
+  }
+}

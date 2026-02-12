@@ -1,0 +1,567 @@
+{
+  "app": {
+    "title": "FlowSuiteCrm",
+    "brand": "FlowSuite",
+    "tagline": "CRM"
+  },
+  "common": {
+    "language": "Idioma",
+    "search": "Buscar",
+    "clear": "Limpiar",
+    "loading": "Cargando...",
+    "noResults": "Sin resultados",
+    "required": "{{field}} es requerido",
+    "error": "Ocurrio un error",
+    "select": "Seleccionar",
+    "save": "Guardar",
+    "saving": "Guardando...",
+    "cancel": "Cancelar",
+    "yes": "Si",
+    "no": "No",
+    "active": "Activo",
+    "inactive": "Inactivo"
+  },
+  "header": {
+    "searchPlaceholder": "Buscar prospectos, clientes o facturas...",
+    "expandSidebar": "Expandir menu",
+    "collapseSidebar": "Colapsar menu",
+    "profile": "Mi perfil"
+  },
+  "nav": {
+    "dashboard": "Dashboard",
+    "contacts": "Contactos",
+    "opportunities": "Oportunidades",
+    "programs": "Programas",
+    "customers": "Clientes",
+    "salesServices": "Ventas y Servicios",
+    "import": "Importar",
+    "internalNotes": "Notas internas",
+    "team": "Equipo",
+    "settings": "Configuracion",
+    "more": "Mas"
+  },
+  "navDesc": {
+    "dashboard": "Resumen del negocio en 30 segundos",
+    "contacts": "Prospectos y referidos sin compra",
+    "opportunities": "Pipeline de ventas activo",
+    "programs": "Incentivos y progreso de recompensas",
+    "customers": "Personas que ya compraron",
+    "salesServices": "Ordenes, servicios, entregas, cobros",
+    "import": "Carga masiva por CSV",
+    "internalNotes": "Cobranza, legal y alertas",
+    "team": "Usuarios, roles y vendedores activos",
+    "settings": "Configuracion de administracion"
+  },
+  "menu": {
+    "dashboard": "Dashboard",
+    "contacts": "Contactos",
+    "opportunities": "Oportunidades",
+    "programs": "Programas",
+    "customers": "Clientes",
+    "salesServices": "Ventas y Servicios",
+    "import": "Importar",
+    "internalNotes": "Notas internas",
+    "team": "Equipo",
+    "settings": "Configuracion",
+    "desc": {
+      "dashboard": "Resumen del negocio en 30 segundos",
+      "contacts": "Prospectos y referidos sin compra",
+      "opportunities": "Pipeline de ventas activo",
+      "programs": "Incentivos y progreso de recompensas",
+      "customers": "Personas que ya compraron",
+      "salesServices": "Ordenes, servicios, entregas, cobros",
+      "import": "Carga masiva por CSV",
+      "internalNotes": "Cobranza, legal y alertas",
+      "team": "Usuarios y roles comerciales",
+      "settings": "Configuracion de administracion"
+    }
+  },
+  "pages": {
+    "contactsTitle": "Contactos",
+    "contactsSubtitle": "Prospectos y referidos no convertidos",
+    "newContactTitle": "Nuevo contacto",
+    "contactTitle": "Contacto",
+    "opportunitiesTitle": "Oportunidades",
+    "opportunitiesSubtitle": "Visualiza y gestiona el flujo de ventas en tiempo real.",
+    "opportunitiesBadge": "Ventas",
+    "opportunitiesBoard": "Tablero",
+    "opportunitiesMetrics": "Metricas",
+    "importTitle": "Importar datos",
+    "importSubtitle": "Carga masiva de informacion mediante archivos CSV.",
+    "settingsTitle": "Configuracion",
+    "settingsSubtitle": "Configuracion administrativa para usuarios, catalogos, origenes y estados.",
+    "settingsBody": "Seccion reservada para configuracion administrativa. Aqui se gestionan usuarios, vendedores, catalogos, origenes y estados.",
+    "settingsLogoutTitle": "Sesion",
+    "settingsLogoutDescription": "Cierra sesion en este dispositivo.",
+    "settingsLogoutLoading": "Cerrando sesion...",
+    "telemarketingTitle": "Telemarketing",
+    "telemarketingSubtitle": "Prioriza llamadas, seguimientos y referidos activos.",
+    "advisorTitle": "Emprendedor (Asesor)",
+    "advisorSubtitle": "Conecta prospectos, agenda demos y cierra ventas.",
+    "dashboardTitle": "Dashboard",
+    "loading": "Cargando...",
+    "noAddress": "Sin direccion",
+    "noLocation": "Ubicacion sin detalles",
+    "contactCreateError": "No se pudo crear el contacto",
+    "contactSaveError": "No se pudo guardar el contacto",
+    "contactNotFound": "Contacto no encontrado"
+  },
+  "roles": {
+    "admin": "Admin",
+    "telemarketing": "Telemarketing",
+    "asesor": "Emprendedor (Asesor)",
+    "advisor": "Asesor",
+    "manager": "Gerente",
+    "distributor": "Distribuidor",
+    "user": "Usuario"
+  },
+  "levels": {
+    "distributor": "Distribuidor",
+    "manager": "Gerente",
+    "advisor": "Asesor",
+    "other": "Otro"
+  },
+  "terminology": {
+    "admin": "Administrador",
+    "advisor": "Asesor",
+    "seller": "Vendedor",
+    "contact": "Contacto",
+    "lead": "Prospecto",
+    "customer": "Cliente",
+    "opportunity": "Oportunidad",
+    "program": "Programa",
+    "order": "Orden",
+    "service": "Servicio"
+  },
+  "buttons": {
+    "newContact": "Nuevo contacto",
+    "save": "Guardar",
+    "saving": "Guardando...",
+    "cancel": "Cancelar",
+    "edit": "Editar",
+    "view": "Ver",
+    "back": "Volver",
+    "delete": "Eliminar",
+    "complete": "Completar",
+    "addReferral": "Agregar referido",
+    "assignToMe": "Asignarme a mi",
+    "createContact": "Crear contacto",
+    "createNote": "Crear nota",
+    "showConverted": "Mostrar convertidos",
+    "newOpportunity": "Nueva oportunidad",
+    "newUser": "Nuevo usuario",
+    "saveUser": "Guardar usuario",
+    "editUser": "Editar",
+    "contacts": "Contactos",
+    "pipeline": "Oportunidades",
+    "customers": "Clientes",
+    "programs": "Programas",
+    "sales": "Ventas y servicios",
+    "uploadProcess": "Subir y procesar",
+    "uploading": "Subiendo...",
+    "selectFile": "Click para seleccionar archivo",
+    "fileFormat": "Formato CSV (.csv)",
+    "logout": "Cerrar sesion"
+  },
+  "contacts": {
+    "title": "Contactos",
+    "subtitle": "Prospectos y referidos no convertidos",
+    "newTitle": "Nuevo contacto",
+    "editTitle": "Editar contacto",
+    "detailTitle": "Detalle de contacto",
+    "sections": {
+      "basic": "Rapido",
+      "basicHelper": "Completa lo minimo para guardar en segundos.",
+      "originReferral": "Origen y referidos",
+      "household": "Calificacion del hogar",
+      "notes": "Notas internas"
+    },
+    "helpers": {
+      "optional": "Opcional",
+      "assignedHelper": "Selecciona un asesor o asignate a ti.",
+      "assignedLocked": "Asignacion bloqueada para tu rol.",
+      "referredSearch": "Busca primero en contactos y clientes.",
+      "referredEmpty": "No encontramos resultados."
+    },
+    "list": {
+      "emptyTitle": "No hay contactos",
+      "emptyDesc": "Agrega un nuevo contacto para comenzar.",
+      "showConverted": "Mostrar convertidos",
+      "hideConverted": "Ocultar convertidos",
+      "filters": "Filtros",
+      "filterAdvisor": "Vendedor",
+      "filterOrigin": "Origen",
+      "filterStatus": "Estado",
+      "summaryTotal": "Contactos",
+      "summaryNew": "Nuevos",
+      "summaryConverted": "Convertidos",
+      "summaryVisible": "Visibles"
+    },
+    "fields": {
+      "name": "Nombre",
+      "mobilePhone": "Celular",
+      "email": "Email",
+      "cityState": "Ciudad/Estado",
+      "origin": "Origen",
+      "originCustom": "Origen personalizado",
+      "referredType": "Tipo de referido",
+      "referredByName": "Referido por",
+      "referredSearch": "Buscar referido",
+      "referredBy": "Referido por",
+      "referredById": "Referido por (ID)",
+      "relationshipType": "Relacion",
+      "relationshipOther": "Relacion (otro)",
+      "seller": "Vendedor",
+      "status": "Estado",
+      "actions": "Acciones",
+      "address1": "Direccion 1",
+      "address2": "Direccion 2",
+      "city": "Ciudad",
+      "state": "Estado",
+      "zipCode": "Zip",
+      "country": "Pais",
+      "relationship": "Relacion con referido",
+      "maritalStatus": "Estado civil",
+      "spouseName": "Nombre de esposa/o",
+      "homeOwnership": "Propiedad",
+      "bothWork": "Trabajan en casa",
+      "knowsRoyal": "Conoce Royal Prestige",
+      "hasChildren": "Tiene hijos",
+      "childrenCount": "Cantidad hijos",
+      "assignedTo": "Asignado a",
+      "contactAllowed": "Contacto permitido",
+      "maritalStatusOther": "Estado civil (otro)",
+      "notes": "Notas"
+    },
+    "placeholders": {
+      "name": "Nombre completo",
+      "mobilePhone": "Numero de celular",
+      "email": "correo@ejemplo.com",
+      "address1": "Direccion principal",
+      "city": "Ciudad",
+      "state": "Estado",
+      "zipCode": "Zip",
+      "notes": "Escribe notas internas",
+      "referredById": "ID de contacto/cliente/usuario",
+      "relationship": "Relacion",
+      "originCustom": "Ej: Feria local, alianza, referidos internos",
+      "referredByName": "Nombre del referido",
+      "referredSearch": "Buscar por nombre",
+      "relationshipOther": "Describe la relacion",
+      "maritalStatusOther": "Especifica el estado civil",
+      "spouseName": "Nombre de esposa/o",
+      "searchAssignee": "Buscar asesor",
+      "childrenCount": "Cantidad"
+    },
+    "origin": {
+      "toque_puerta": "Toque de Puerta",
+      "referido": "Referido",
+      "familiares_amigos": "Familiares y Amigos",
+      "raspa_gana": "Raspa y Gana",
+      "calendario_suerte": "Calendario de la suerte",
+      "feria": "Feria",
+      "exhibidor": "Exhibidor",
+      "redes_sociales": "Redes Sociales",
+      "clientes_otro_distribuidor": "Clientes de Otro Distribuidor",
+      "otro": "Otros",
+      "no_dice": "No dice"
+    },
+    "referredTypes": {
+      "amigo": "Amigo",
+      "familia": "Familiar",
+      "cliente": "Cliente",
+      "externo": "Externo",
+      "otro": "Otro"
+    },
+    "enums": {
+      "marital": {
+        "soltero": "Soltero",
+        "casado": "Casado",
+        "union_libre": "Union libre",
+        "divorciado": "Divorciado",
+        "viudo": "Viudo",
+        "no_dice": "No dice",
+        "otro": "Otro"
+      },
+      "homeOwnership": {
+        "dueno": "Dueno",
+        "renta": "Renta",
+        "no_dice": "No dice"
+      },
+      "bothWork": {
+        "trabaja_1": "Trabaja uno",
+        "trabajan_2": "Trabajan dos",
+        "no_dice": "No dice"
+      },
+      "knowsRoyal": {
+        "si": "Si",
+        "no": "No",
+        "ha_escuchado": "Ha escuchado",
+        "no_dice": "No dice"
+      }
+    },
+    "household": {
+      "workSolo": "Solo yo",
+      "workBoth": "Ambos"
+    }
+  },
+  "users": {
+    "title": "Equipo",
+    "subtitle": "Gestiona usuarios, roles y vendedores activos.",
+    "newTitle": "Nuevo usuario",
+    "editTitle": "Editar usuario",
+    "emptyTitle": "No hay usuarios",
+    "emptySubtitle": "Agrega un usuario para empezar.",
+    "fields": {
+      "full_name": "Nombre completo",
+      "mobile": "Celular",
+      "email": "Email",
+      "seller_code": "Codigo vendedor",
+      "role": "Rol",
+      "level": "Nivel",
+      "start_date": "Fecha inicio",
+      "photo_url": "Foto (URL)",
+      "address1": "Direccion 1",
+      "address2": "Direccion 2",
+      "city": "Ciudad",
+      "state": "Estado",
+      "zip": "Zip",
+      "country": "Pais",
+      "is_active": "Activo",
+      "actions": "Acciones"
+    },
+    "placeholders": {
+      "full_name": "Nombre y apellido",
+      "mobile": "Numero de celular",
+      "email": "correo@empresa.com",
+      "seller_code": "DIS-0001",
+      "photo_url": "https://",
+      "search": "Buscar por nombre o codigo"
+    },
+    "filters": {
+      "allRoles": "Todos los roles",
+      "allStatuses": "Todos los estados"
+    }
+  },
+  "status": {
+    "new": "Nuevo",
+    "contacted": "Contactado",
+    "qualified": "Calificado",
+    "appointmentScheduled": "Cita agendada",
+    "doNotContact": "No molestar",
+    "notInterested": "No interesa",
+    "unknown": "No disponible"
+  },
+  "formSections": {
+    "basic": "Basico",
+    "address": "Direccion",
+    "originReferral": "Origen / Referido",
+    "qualification": "Calificacion",
+    "assignment": "Asignacion",
+    "notes": "Notas"
+  },
+  "forms": {
+    "sections": {
+      "basic": "Basico",
+      "address": "Direccion",
+      "originReferral": "Origen / Referido",
+      "qualification": "Calificacion",
+      "assignment": "Asignacion"
+    },
+    "required": "{{field}} es requerido",
+    "fields": {
+      "fullName": "Nombre completo",
+      "mobilePhone": "Celular",
+      "email": "Email",
+      "status": "Status",
+      "contactAllowed": "Contacto permitido",
+      "address1": "Direccion 1",
+      "address2": "Direccion 2",
+      "city": "Ciudad",
+      "state": "Estado",
+      "zip": "Zip",
+      "country": "Pais",
+      "originType": "Origen",
+      "referredByType": "Referido por (tipo)",
+      "referredById": "Referido por (ID)",
+      "relationship": "Relacion con referido",
+      "maritalStatus": "Estado civil",
+      "homeOwnership": "Propiedad",
+      "bothWork": "Trabajan en casa",
+      "knowsRoyal": "Conoce Royal Prestige",
+      "hasChildren": "Tiene hijos",
+      "childrenCount": "Cantidad hijos",
+      "assignedTo": "Vendedor",
+      "notes": "Notas"
+    },
+    "placeholders": {
+      "referredById": "ID contacto/cliente/usuario",
+      "select": "Seleccionar"
+    }
+  },
+  "tables": {
+    "name": "Nombre",
+    "mobile": "Celular",
+    "cityState": "Ciudad/Estado",
+    "origin": "Origen",
+    "referredBy": "Referido por",
+    "seller": "Vendedor",
+    "status": "Status",
+    "actions": "Acciones"
+  },
+  "dashboard": {
+    "overviewTitle": "Panel de control",
+    "overviewSubtitle": "Resumen general de tu cartera y alertas criticas.",
+    "last30Days": "Ultimos 30 dias",
+    "kpis": {
+      "customersDirectory": "Directorio clientes",
+      "activeAccounts": "{{count}} cuentas activas",
+      "totalPortfolio": "Cartera total",
+      "pendingBalance": "Saldo pendiente",
+      "overdue": "Cobros vencidos",
+      "urgent": "Gestion urgente",
+      "communication": "Comunicacion",
+      "followUpNotes": "Notas de seguimiento"
+    },
+    "callsToday": "Llamadas de hoy",
+    "firstContact": "Agenda tu primer contacto.",
+    "activeProspects": "Prospectos activos",
+    "unconverted": "Contactos sin convertir.",
+    "followUps": "Seguimientos",
+    "pendingToday": "Pendientes del dia.",
+    "quickActions": "Acciones rapidas",
+    "optimize": "Optimiza tu flujo diario.",
+    "royalReferrals": "Referidos Royal",
+    "activatePrograms": "Activa programas",
+    "promotePrograms": "Promociona 20 y Gana, 4 en 14 y eventos.",
+    "newOrder": "Nueva orden",
+    "scheduledDemos": "Demos agendadas",
+    "salesInProgress": "Ventas en curso",
+    "monthlyGoal": "Meta mensual",
+    "priorityActions": "Acciones prioritarias",
+    "focusDay": "Enfoca tu dia con los pasos clave.",
+    "boostPrograms": "Impulsa referidos y programas activos para cerrar mas rapido.",
+    "explorePrograms": "Explorar programas",
+    "topDebtorsTitle": "Top deudores",
+    "topDebtorsSubtitle": "Clientes con mayor saldo pendiente",
+    "viewDirectory": "Ver directorio completo",
+    "totalDebt": "Deuda total",
+    "general": "General",
+    "overdueAmount": "{{amount}} vencido",
+    "overdueLabel": "En mora",
+    "currentLabel": "Al dia"
+  },
+  "alerts": {
+    "quickActions": "Acciones rapidas",
+    "newCustomer": "Nuevo cliente",
+    "newOrder": "Nueva orden",
+    "campaign": "Campana",
+    "title": "Alertas y avisos",
+    "allClearTitle": "Todo en orden",
+    "allClearSubtitle": "No hay alertas pendientes de revision.",
+    "critical": "Critico",
+    "info": "Info",
+    "timeAgo": "Hace {{time}}",
+    "resolve": "Resolver"
+  },
+  "charts": {
+    "revenueTrend": "Tendencia de ingresos",
+    "semiannual": "Comparativa semestral",
+    "portfolioDistribution": "Distribucion de cartera",
+    "customerStatus": "Estado actual de clientes",
+    "total": "Total",
+    "active": "Activos",
+    "inactive": "Inactivos",
+    "new": "Nuevos",
+    "overdue": "En mora"
+  },
+  "months": {
+    "jan": "Ene",
+    "feb": "Feb",
+    "mar": "Mar",
+    "apr": "Abr",
+    "may": "May",
+    "jun": "Jun",
+    "jul": "Jul"
+  },
+  "orders": {
+    "badge": "Operaciones",
+    "subtitle": "Gestion completa de servicios, facturacion y estados de entrega.",
+    "newOrder": "Nueva orden de trabajo"
+  },
+  "customers": {
+    "subtitle": "Gestion de base de datos de clientes",
+    "searchPlaceholder": "Buscar cliente...",
+    "newCustomer": "Nuevo cliente",
+    "emptyTitle": "No hay clientes registrados",
+    "emptyDesc": "Crea tu primer cliente para empezar a gestionar tu cartera.",
+    "noResultsTitle": "No se encontraron clientes para esta busqueda",
+    "noResultsDesc": "Prueba con otro nombre, correo o estado.",
+    "overdueAmount": "{{amount}} vencido",
+    "showing": "Mostrando {{shown}} de {{total}} clientes",
+    "filters": {
+      "allStatuses": "Todos los estados"
+    },
+    "status": {
+      "active": "Activos",
+      "overdue": "Morosos",
+      "inactive": "Inactivos"
+    },
+    "columns": {
+      "name": "Nombre / Contacto",
+      "location": "Ubicacion",
+      "status": "Estado",
+      "balance": "Saldo",
+      "actions": "Acciones"
+    }
+  },
+  "notes": {
+    "subtitle": "Bitacora global de actividades y seguimiento"
+  },
+  "programs": {
+    "subtitle": "20 y Gana / 4 en 14 / Referidos simples",
+    "types": {
+      "20yGana": "20 y Gana",
+      "4en14": "4 en 14",
+      "simple": "Referido simple"
+    },
+    "filters": {
+      "allTypes": "Todos los tipos",
+      "allStatuses": "Todos los estados"
+    },
+    "status": {
+      "activo": "Activo",
+      "pendiente": "Pendiente",
+      "completado": "Completado",
+      "expirado": "Expirado",
+      "cancelado": "Cancelado"
+    },
+    "table": {
+      "program": "Programa",
+      "owner": "Dueno",
+      "advisor": "Asesor",
+      "status": "Estado",
+      "dates": "Fechas",
+      "reward": "Regalo"
+    },
+    "reward": {
+      "delivered": "Entregado",
+      "eligible": "Elegible",
+      "pending": "Pendiente"
+    }
+  },
+  "import": {
+    "cardTitle": "Importar {{label}}",
+    "expectedFormat": "Formato esperado:",
+    "completed": "Importacion completada",
+    "processed": "Total procesados: {{count}}",
+    "errors": "Errores ({{count}}):",
+    "more": "...y {{count}} mas",
+    "uploadError": "Error al subir archivo",
+    "labels": {
+      "customers": "Clientes",
+      "orders": "Ordenes",
+      "transactions": "Transacciones"
+    }
+  }
+}
