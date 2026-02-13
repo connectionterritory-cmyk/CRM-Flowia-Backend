@@ -10,7 +10,7 @@ const sslEnabled = process.env.DB_SSL === 'false'
     ? false
     : { rejectUnauthorized: false };
 
-const dbPort = Number(process.env.DB_PORT || 6543);
+const dbPort = Number(process.env.DB_PORT || 5432);
 
 const client = new Client({
     connectionString,
