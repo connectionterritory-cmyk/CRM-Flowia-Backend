@@ -1,11 +1,193 @@
 const express = require('express');
 const router = express.Router();
-const db = require('../config/database');
+const { getSupabaseClient } = require('../services/SupabaseClient');
 const auth = require('../middleware/auth');
 const checkRole = require('../middleware/checkRole');
-const { buildContactoInsert, buildContactoUpdate } = require('../utils/contactos');
 
 router.use(auth);
+
+let contactosMetaPromise = null;
+let usuariosMetaPromise = null;
+let clientesMetaPromise = null;
+
+const resolveColumn = (columns, ...candidates) => {
+    if (!columns || columns.size === 0) return candidates[0];
+    for (const candidate of candidates) {
+        if (columns.has(candidate)) return candidate;
+    }
+    return candidates[0];
+};
+
+const loadTableMeta = async (tableNames, fallbackTable) => {
+    const supabase = getSupabaseClient();
+    const { data, error } = await supabase
+        .from('information_schema.columns')
+        .select('table_name,column_name')
+        .eq('table_schema', 'public')
+        .in('table_name', tableNames);
+
+    if (error || !data || data.length === 0) {
+        return { tableName: fallbackTable, columns: new Set() };
+    }
+
+    const counts = data.reduce((acc, row) => {
+        acc[row.table_name] = (acc[row.table_name] || 0) + 1;
+        return acc;
+    }, {});
+
+    const tableName = Object.keys(counts)
+        .sort((a, b) => counts[b] - counts[a])[0];
+
+    const columns = new Set(
+        data.filter((row) => row.table_name === tableName).map((row) => row.column_name)
+    );
+
+    return { tableName, columns };
+};
+
+const getContactosMeta = async () => {
+    if (!contactosMetaPromise) {
+        contactosMetaPromise = loadTableMeta(['contactos', 'Contactos'], 'contactos');
+    }
+    return contactosMetaPromise;
+};
+
+const getUsuariosMeta = async () => {
+    if (!usuariosMetaPromise) {
+        usuariosMetaPromise = loadTableMeta(['usuarios', 'Usuarios'], 'usuarios');
+    }
+    return usuariosMetaPromise;
+};
+
+const getClientesMeta = async () => {
+    if (!clientesMetaPromise) {
+        clientesMetaPromise = loadTableMeta(['clientes', 'Clientes'], 'clientes');
+    }
+    return clientesMetaPromise;
+};
+
+const filterPayload = (columns, values) => {
+    if (!columns || columns.size === 0) return values;
+    return Object.fromEntries(
+        Object.entries(values).filter(([key, value]) => value !== undefined && columns.has(key))
+    );
+};
+
+const getValue = (row, ...keys) => {
+    for (const key of keys) {
+        if (row && row[key] !== undefined && row[key] !== null) return row[key];
+    }
+    return null;
+};
+
+const enrichContactos = async (contactos) => {
+    if (!Array.isArray(contactos) || contactos.length === 0) return contactos;
+
+    const supabase = getSupabaseClient();
+    const usuariosMeta = await getUsuariosMeta();
+    const clientesMeta = await getClientesMeta();
+    const contactosMeta = await getContactosMeta();
+
+    const assignedIds = Array.from(new Set(
+        contactos
+            .map((contacto) => getValue(contacto, 'assigned_to_user_id', 'AssignedToUserId', 'assigned_to_user_id'))
+            .filter((id) => id !== null && id !== undefined)
+    ));
+
+    const usuariosIdColumn = resolveColumn(usuariosMeta.columns, 'usuarioid', 'UsuarioID');
+    const usuariosNameColumn = resolveColumn(usuariosMeta.columns, 'nombre', 'Nombre');
+    const usuariosMap = new Map();
+
+    if (assignedIds.length > 0) {
+        const { data: usuariosData } = await supabase
+            .from(usuariosMeta.tableName)
+            .select(`${usuariosIdColumn},${usuariosNameColumn}`)
+            .in(usuariosIdColumn, assignedIds);
+
+        (usuariosData || []).forEach((usuario) => {
+            const id = usuario[usuariosIdColumn];
+            const nombre = usuario[usuariosNameColumn];
+            if (id !== undefined) usuariosMap.set(id, nombre);
+        });
+    }
+
+    const referidosContactoIds = [];
+    const referidosClienteIds = [];
+    const referidosUsuarioIds = [];
+
+    contactos.forEach((contacto) => {
+        const tipo = String(getValue(contacto, 'referred_by_type', 'ReferredByType', 'referred_by_type') || '').toUpperCase();
+        const referidoId = getValue(contacto, 'referred_by_id', 'ReferidoPorId', 'referred_by_id');
+        if (!referidoId) return;
+        if (tipo === 'CONTACTO') referidosContactoIds.push(referidoId);
+        if (tipo === 'CLIENTE') referidosClienteIds.push(referidoId);
+        if (tipo === 'USUARIO') referidosUsuarioIds.push(referidoId);
+    });
+
+    const contactoIdColumn = resolveColumn(contactosMeta.columns, 'contactoid', 'ContactoID');
+    const contactoNameColumn = resolveColumn(contactosMeta.columns, 'full_name', 'NombreCompleto');
+    const clienteIdColumn = resolveColumn(clientesMeta.columns, 'clienteid', 'ClienteID');
+    const clienteNameColumn = resolveColumn(clientesMeta.columns, 'nombre', 'Nombre');
+
+    const contactosMap = new Map();
+    const clientesMap = new Map();
+
+    if (referidosContactoIds.length > 0) {
+        const { data: referidosContactos } = await supabase
+            .from(contactosMeta.tableName)
+            .select(`${contactoIdColumn},${contactoNameColumn}`)
+            .in(contactoIdColumn, Array.from(new Set(referidosContactoIds)));
+
+        (referidosContactos || []).forEach((row) => {
+            const id = row[contactoIdColumn];
+            const nombre = row[contactoNameColumn];
+            if (id !== undefined) contactosMap.set(id, nombre);
+        });
+    }
+
+    if (referidosClienteIds.length > 0) {
+        const { data: referidosClientes } = await supabase
+            .from(clientesMeta.tableName)
+            .select(`${clienteIdColumn},${clienteNameColumn}`)
+            .in(clienteIdColumn, Array.from(new Set(referidosClienteIds)));
+
+        (referidosClientes || []).forEach((row) => {
+            const id = row[clienteIdColumn];
+            const nombre = row[clienteNameColumn];
+            if (id !== undefined) clientesMap.set(id, nombre);
+        });
+    }
+
+    if (referidosUsuarioIds.length > 0 && usuariosMap.size === 0) {
+        const { data: referidosUsuarios } = await supabase
+            .from(usuariosMeta.tableName)
+            .select(`${usuariosIdColumn},${usuariosNameColumn}`)
+            .in(usuariosIdColumn, Array.from(new Set(referidosUsuarioIds)));
+
+        (referidosUsuarios || []).forEach((row) => {
+            const id = row[usuariosIdColumn];
+            const nombre = row[usuariosNameColumn];
+            if (id !== undefined) usuariosMap.set(id, nombre);
+        });
+    }
+
+    return contactos.map((contacto) => {
+        const assignedId = getValue(contacto, 'assigned_to_user_id', 'AssignedToUserId', 'assigned_to_user_id');
+        const tipo = String(getValue(contacto, 'referred_by_type', 'ReferredByType', 'referred_by_type') || '').toUpperCase();
+        const referidoId = getValue(contacto, 'referred_by_id', 'ReferidoPorId', 'referred_by_id');
+        let referidoNombre = null;
+
+        if (tipo === 'CONTACTO') referidoNombre = contactosMap.get(referidoId) || null;
+        if (tipo === 'CLIENTE') referidoNombre = clientesMap.get(referidoId) || null;
+        if (tipo === 'USUARIO') referidoNombre = usuariosMap.get(referidoId) || null;
+
+        return {
+            ...contacto,
+            AssignedToNombre: assignedId ? usuariosMap.get(assignedId) || null : null,
+            ReferidoPorNombre: referidoNombre,
+        };
+    });
+};
 
 const normalizeValue = (value) => {
     if (value === undefined || value === null) return null;
@@ -90,32 +272,57 @@ router.get('/search', async (req, res) => {
         if (!term) return res.json([]);
 
         const limit = Number(req.query.limit) > 0 ? Number(req.query.limit) : 15;
+        const supabase = getSupabaseClient();
+        const meta = await getContactosMeta();
         const like = `%${term}%`;
-        const contactos = await db.prepare(`
-            SELECT
-                ContactoID as id,
-                COALESCE(full_name, NombreCompleto) as fullName,
-                COALESCE(mobile_phone, Telefono) as mobilePhone,
-                Email as email,
-                COALESCE(address1, Direccion) as address1,
-                address2 as address2,
-                COALESCE(city, Ciudad) as city,
-                COALESCE(state, Estado) as state,
-                COALESCE(zip_code, Zipcode) as zip,
-                COALESCE(country, Pais) as country,
-                COALESCE(origin_type, OrigenFuente) as leadSource,
-                COALESCE(referred_by_id, ReferidoPorId) as referredById,
-                assigned_to_user_id as ownerUserId
-            FROM Contactos
-            WHERE
-                full_name LIKE ? OR NombreCompleto LIKE ?
-                OR mobile_phone LIKE ? OR Telefono LIKE ?
-                OR Email LIKE ?
-            ORDER BY UpdatedAt DESC
-            LIMIT ?
-        `).all(like, like, like, like, like, limit);
+        const orderColumn = resolveColumn(meta.columns, 'updatedat', 'UpdatedAt');
+        const searchColumns = new Set();
 
-        res.json(contactos || []);
+        ['full_name', 'NombreCompleto', 'mobile_phone', 'Telefono', 'Email', 'email']
+            .forEach((column) => {
+                if (!meta.columns || meta.columns.size === 0) {
+                    searchColumns.add(column);
+                } else if (meta.columns.has(column)) {
+                    searchColumns.add(column);
+                }
+            });
+
+        let query = supabase
+            .from(meta.tableName)
+            .select('*')
+            .limit(limit);
+
+        if (searchColumns.size > 0) {
+            const filters = Array.from(searchColumns).map((column) => `${column}.ilike.${like}`);
+            query = query.or(filters.join(','));
+        }
+
+        if (orderColumn) {
+            query = query.order(orderColumn, { ascending: false });
+        }
+
+        const { data, error } = await query;
+        if (error) {
+            return res.status(500).json({ error: error.message });
+        }
+
+        const contactos = (data || []).map((row) => ({
+            id: getValue(row, 'ContactoID', 'contactoid', 'id'),
+            fullName: getValue(row, 'full_name', 'NombreCompleto'),
+            mobilePhone: getValue(row, 'mobile_phone', 'Telefono'),
+            email: getValue(row, 'email', 'Email'),
+            address1: getValue(row, 'address1', 'Direccion'),
+            address2: getValue(row, 'address2'),
+            city: getValue(row, 'city', 'Ciudad'),
+            state: getValue(row, 'state', 'Estado'),
+            zip: getValue(row, 'zip_code', 'Zipcode'),
+            country: getValue(row, 'country', 'Pais'),
+            leadSource: getValue(row, 'origin_type', 'OrigenFuente'),
+            referredById: getValue(row, 'referred_by_id', 'ReferidoPorId'),
+            ownerUserId: getValue(row, 'assigned_to_user_id', 'AssignedToUserId'),
+        }));
+
+        res.json(contactos);
     } catch (err) {
         res.status(500).json({ error: err.message });
     }
@@ -132,32 +339,56 @@ router.get('/check-duplicate', async (req, res) => {
             return res.json({ exists: false });
         }
 
-        const phoneExpr = `replace(replace(replace(replace(replace(replace(coalesce(mobile_phone,''), '+',''), ' ', ''), '-', ''), '(', ''), ')',''), '.', '')`;
-        const phoneExprLegacy = `replace(replace(replace(replace(replace(replace(coalesce(Telefono,''), '+',''), ' ', ''), '-', ''), '(', ''), ')',''), '.', '')`;
+        const supabase = getSupabaseClient();
+        const meta = await getContactosMeta();
+        const orFilters = [];
 
-        const contacto = await db.prepare(`
-            SELECT
-                ContactoID as id,
-                COALESCE(full_name, NombreCompleto) as fullName,
-                COALESCE(mobile_phone, Telefono) as mobilePhone,
-                Email as email,
-                COALESCE(city, Ciudad) as city,
-                COALESCE(state, Estado) as state
-            FROM Contactos
-            WHERE
-                (${emailRaw ? 'LOWER(Email) = ? OR' : ''}
-                ${phone ? `${phoneExpr} = ? OR ${phoneExprLegacy} = ? OR mobile_phone = ? OR Telefono = ?` : '1=0'})
-            LIMIT 1
-        `).get(
-            ...(emailRaw ? [emailRaw] : []),
-            ...(phone ? [phone, phone, phoneRaw, phoneRaw] : [])
-        );
+        if (emailRaw) {
+            const emailColumn = resolveColumn(meta.columns, 'email', 'Email');
+            orFilters.push(`${emailColumn}.ilike.${emailRaw}`);
+        }
+
+        if (phone) {
+            const phoneColumns = ['mobile_phone', 'Telefono', 'telefono', 'phone_digits'];
+            phoneColumns.forEach((column) => {
+                if (!meta.columns || meta.columns.size === 0 || meta.columns.has(column)) {
+                    const value = column === 'phone_digits' ? phone : phoneRaw;
+                    if (value) orFilters.push(`${column}.eq.${value}`);
+                }
+            });
+        }
+
+        if (orFilters.length === 0) {
+            return res.json({ exists: false });
+        }
+
+        const { data, error } = await supabase
+            .from(meta.tableName)
+            .select('*')
+            .or(orFilters.join(','))
+            .limit(1);
+
+        if (error) {
+            return res.status(500).json({ error: error.message });
+        }
+
+        const contacto = data && data.length > 0 ? data[0] : null;
 
         if (!contacto) {
             return res.json({ exists: false });
         }
 
-        return res.json({ exists: true, contact: contacto });
+        return res.json({
+            exists: true,
+            contact: {
+                id: getValue(contacto, 'ContactoID', 'contactoid', 'id'),
+                fullName: getValue(contacto, 'full_name', 'NombreCompleto'),
+                mobilePhone: getValue(contacto, 'mobile_phone', 'Telefono'),
+                email: getValue(contacto, 'email', 'Email'),
+                city: getValue(contacto, 'city', 'Ciudad'),
+                state: getValue(contacto, 'state', 'Estado'),
+            }
+        });
     } catch (err) {
         res.status(500).json({ error: err.message });
     }
@@ -167,34 +398,47 @@ router.get('/check-duplicate', async (req, res) => {
 router.get('/', async (req, res) => {
     try {
         const { convertido, q } = req.query;
-        let query = `
-            SELECT c.*,
-                u.Nombre as AssignedToNombre,
-                COALESCE(rc.full_name, rcl.Nombre, ru.Nombre) as ReferidoPorNombre
-            FROM Contactos c
-            LEFT JOIN Usuarios u ON c.assigned_to_user_id = u.UsuarioID
-            LEFT JOIN Contactos rc ON c.referred_by_type = 'CONTACTO' AND c.referred_by_id = rc.ContactoID
-            LEFT JOIN Clientes rcl ON c.referred_by_type = 'CLIENTE' AND c.referred_by_id = rcl.ClienteID
-            LEFT JOIN Usuarios ru ON c.referred_by_type = 'USUARIO' AND c.referred_by_id = ru.UsuarioID
-        `;
-        const params = [];
+        const supabase = getSupabaseClient();
+        const meta = await getContactosMeta();
+        const convertedColumn = resolveColumn(meta.columns, 'convertido', 'Convertido');
+        const createdColumn = resolveColumn(meta.columns, 'createdat', 'CreatedAt');
+
+        let query = supabase.from(meta.tableName).select('*');
 
         if (convertido !== undefined) {
-            query += ' WHERE c.Convertido = ?';
-            params.push(convertido === 'true' ? 1 : 0);
+            query = query.eq(convertedColumn, convertido === 'true' ? 1 : 0);
         } else {
-            query += ' WHERE c.Convertido = 0';
+            query = query.eq(convertedColumn, 0);
         }
 
         if (q) {
-            query += ' AND (c.NombreCompleto LIKE ? OR c.Telefono LIKE ? OR c.Email LIKE ? OR c.full_name LIKE ?)';
             const term = `%${q}%`;
-            params.push(term, term, term, term);
+            const searchColumns = new Set();
+            ['NombreCompleto', 'Telefono', 'Email', 'full_name', 'mobile_phone', 'email']
+                .forEach((column) => {
+                    if (!meta.columns || meta.columns.size === 0) {
+                        searchColumns.add(column);
+                    } else if (meta.columns.has(column)) {
+                        searchColumns.add(column);
+                    }
+                });
+
+            const filters = Array.from(searchColumns).map((column) => `${column}.ilike.${term}`);
+            if (filters.length > 0) {
+                query = query.or(filters.join(','));
+            }
         }
 
-        query += ' ORDER BY c.CreatedAt DESC';
+        if (createdColumn) {
+            query = query.order(createdColumn, { ascending: false });
+        }
 
-        const contactos = await db.prepare(query).all(...params);
+        const { data, error } = await query;
+        if (error) {
+            return res.status(500).json({ error: error.message });
+        }
+
+        const contactos = await enrichContactos(data || []);
         res.json(contactos);
     } catch (err) {
         res.status(500).json({ error: err.message });
@@ -204,18 +448,23 @@ router.get('/', async (req, res) => {
 // GET contacto by id
 router.get('/:id', async (req, res) => {
     try {
-        const contacto = await db.prepare(`
-            SELECT c.*,
-                u.Nombre as AssignedToNombre,
-                COALESCE(rc.full_name, rcl.Nombre, ru.Nombre) as ReferidoPorNombre
-            FROM Contactos c
-            LEFT JOIN Usuarios u ON c.assigned_to_user_id = u.UsuarioID
-            LEFT JOIN Contactos rc ON c.referred_by_type = 'CONTACTO' AND c.referred_by_id = rc.ContactoID
-            LEFT JOIN Clientes rcl ON c.referred_by_type = 'CLIENTE' AND c.referred_by_id = rcl.ClienteID
-            LEFT JOIN Usuarios ru ON c.referred_by_type = 'USUARIO' AND c.referred_by_id = ru.UsuarioID
-            WHERE c.ContactoID = ?
-        `).get(req.params.id);
-        if (!contacto) return res.status(404).json({ error: 'Contacto no encontrado' });
+        const supabase = getSupabaseClient();
+        const meta = await getContactosMeta();
+        const idColumn = resolveColumn(meta.columns, 'contactoid', 'ContactoID');
+
+        const { data, error } = await supabase
+            .from(meta.tableName)
+            .select('*')
+            .eq(idColumn, req.params.id)
+            .maybeSingle();
+
+        if (error) {
+            return res.status(500).json({ error: error.message });
+        }
+
+        if (!data) return res.status(404).json({ error: 'Contacto no encontrado' });
+
+        const [contacto] = await enrichContactos([data]);
         res.json(contacto);
     } catch (err) {
         res.status(500).json({ error: err.message });
@@ -268,6 +517,9 @@ router.post('/', checkRole('DISTRIBUIDOR', 'VENDEDOR', 'TELEMARKETING'), async (
             NombrePareja
         } = req.body;
 
+        const supabase = getSupabaseClient();
+        const meta = await getContactosMeta();
+
         const fullNameValue = normalizeValue(full_name || nombreCompleto);
         const phoneValue = normalizeValue(mobile_phone || telefono);
         const cityValue = normalizeValue(city || ciudad) || 'NO_DICE';
@@ -312,22 +564,36 @@ router.post('/', checkRole('DISTRIBUIDOR', 'VENDEDOR', 'TELEMARKETING'), async (
 
         const phoneNormalized = normalizePhone(phoneValue);
         if (phoneNormalized || emailValue) {
-            const phoneExpr = `replace(replace(replace(replace(replace(replace(coalesce(mobile_phone,''), '+',''), ' ', ''), '-', ''), '(', ''), ')',''), '.', '')`;
-            const phoneExprLegacy = `replace(replace(replace(replace(replace(replace(coalesce(Telefono,''), '+',''), ' ', ''), '-', ''), '(', ''), ')',''), '.', '')`;
-            const duplicate = await db.prepare(`
-                SELECT ContactoID
-                FROM Contactos
-                WHERE
-                    (${emailValue ? 'LOWER(Email) = ? OR' : ''}
-                    ${phoneNormalized ? `${phoneExpr} = ? OR ${phoneExprLegacy} = ? OR mobile_phone = ? OR Telefono = ?` : '1=0'})
-                LIMIT 1
-            `).get(
-                ...(emailValue ? [emailValue.toLowerCase()] : []),
-                ...(phoneNormalized ? [phoneNormalized, phoneNormalized, phoneValue, phoneValue] : [])
-            );
+            const orFilters = [];
+            if (emailValue) {
+                const emailColumn = resolveColumn(meta.columns, 'email', 'Email');
+                orFilters.push(`${emailColumn}.ilike.${emailValue.toLowerCase()}`);
+            }
+            if (phoneNormalized) {
+                const phoneColumns = ['mobile_phone', 'Telefono', 'telefono', 'phone_digits'];
+                phoneColumns.forEach((column) => {
+                    if (!meta.columns || meta.columns.size === 0 || meta.columns.has(column)) {
+                        const value = column === 'phone_digits' ? phoneNormalized : phoneValue;
+                        if (value) orFilters.push(`${column}.eq.${value}`);
+                    }
+                });
+            }
 
-            if (duplicate) {
-                return res.status(409).json({ error: 'Contacto ya existe', contactId: duplicate.ContactoID });
+            if (orFilters.length > 0) {
+                const { data: duplicates, error } = await supabase
+                    .from(meta.tableName)
+                    .select('ContactoID')
+                    .or(orFilters.join(','))
+                    .limit(1);
+
+                if (error) {
+                    return res.status(500).json({ error: error.message });
+                }
+
+                if (duplicates && duplicates.length > 0) {
+                    const duplicateId = getValue(duplicates[0], 'ContactoID', 'contactoid');
+                    return res.status(409).json({ error: 'Contacto ya existe', contactId: duplicateId });
+                }
             }
         }
 
@@ -383,10 +649,25 @@ router.post('/', checkRole('DISTRIBUIDOR', 'VENDEDOR', 'TELEMARKETING'), async (
             ReferidoPorId: referredByTypeValue === 'CONTACTO' ? referredByIdValue : null,
         };
 
-        const insertStatement = await buildContactoInsert(db, insertValues);
-        const info = await db.prepare(insertStatement.sql).run(...insertStatement.values);
+        const filteredInsertValues = filterPayload(meta.columns, insertValues);
+        const idColumn = resolveColumn(meta.columns, 'contactoid', 'ContactoID');
+        const { data, error } = await supabase
+            .from(meta.tableName)
+            .insert(filteredInsertValues)
+            .select(idColumn)
+            .maybeSingle();
 
-        res.status(201).json({ id: info.lastInsertRowid, message: 'Contacto creado' });
+        if (error) {
+            const constraintError = buildContactosConstraintError(error);
+            if (constraintError) {
+                return res.status(400).json({ error: constraintError });
+            }
+            return res.status(500).json({ error: error.message });
+        }
+
+        const createdId = data?.[idColumn] ?? data?.ContactoID ?? data?.contactoid;
+
+        res.status(201).json({ id: createdId, message: 'Contacto creado' });
     } catch (err) {
         const constraintError = buildContactosConstraintError(err);
         if (constraintError) {
@@ -397,151 +678,179 @@ router.post('/', checkRole('DISTRIBUIDOR', 'VENDEDOR', 'TELEMARKETING'), async (
 });
 
 // PATCH contacto (partial update)
-    router.patch('/:id', checkRole('DISTRIBUIDOR', 'VENDEDOR', 'TELEMARKETING'), async (req, res) => {
-        try {
-            const existing = await db.prepare('SELECT * FROM Contactos WHERE ContactoID = ?').get(req.params.id);
-            if (!existing) return res.status(404).json({ error: 'Contacto no encontrado' });
+router.patch('/:id', checkRole('DISTRIBUIDOR', 'VENDEDOR', 'TELEMARKETING'), async (req, res) => {
+    try {
+        const supabase = getSupabaseClient();
+        const meta = await getContactosMeta();
+        const idColumn = resolveColumn(meta.columns, 'contactoid', 'ContactoID');
 
-            const fields = [];
-            const values = [];
-            const upsertField = (column, value) => {
-                fields.push(`${column} = ?`);
-                values.push(value);
-            };
+        const { data: existing, error: existingError } = await supabase
+            .from(meta.tableName)
+            .select('*')
+            .eq(idColumn, req.params.id)
+            .maybeSingle();
 
-            const fullNameValue = normalizeValue(req.body.full_name || req.body.NombreCompleto);
-            const phoneValue = normalizeValue(req.body.mobile_phone || req.body.Telefono);
-            const emailValue = normalizeValue(req.body.email || req.body.Email);
-            const address1Value = normalizeValue(req.body.address1 || req.body.Direccion);
-            const address2Value = normalizeValue(req.body.address2);
-            const cityValue = normalizeValue(req.body.city || req.body.Ciudad);
-            const stateValue = normalizeValue(req.body.state || req.body.Estado);
-            const zipValue = normalizeValue(req.body.zip_code || req.body.Zipcode);
-            const countryValue = normalizeValue(req.body.country || req.body.Pais);
+        if (existingError) {
+            return res.status(500).json({ error: existingError.message });
+        }
 
-            const maritalValue = normalizeEnum(req.body.marital_status || req.body.EstadoCivil, MARITAL_OPTIONS, null);
-            const homeOwnershipValue = normalizeEnum(req.body.home_ownership, HOME_OWNERSHIP_OPTIONS, null);
-            const bothWorkValue = normalizeEnum(req.body.both_work || req.body.TrabajaActualmente, BOTH_WORK_OPTIONS, null);
-            const knowsRoyalValue = normalizeEnum(req.body.knows_royal_prestige, KNOWS_RP_OPTIONS, null);
-            const statusValue = normalizeEnum(req.body.contact_status, CONTACT_STATUS_OPTIONS, null);
-            const allowedValue = normalizeBoolean(req.body.contact_allowed, null);
-            const hasChildrenValue = normalizeBoolean(req.body.has_children, null);
-            const childrenCountValue = req.body.children_count !== undefined && req.body.children_count !== null && req.body.children_count !== ''
-                ? Number(req.body.children_count)
-                : req.body.children_count === '' ? null : undefined;
-            const notesValue = normalizeValue(req.body.notes);
-            const spouseNameValue = normalizeValue(req.body.spouse_name || req.body.NombrePareja);
-            const relationshipValue = normalizeValue(req.body.relationship_to_referrer);
-            const originTypeValue = normalizeValue(req.body.origin_type || req.body.OrigenFuente || req.body.source);
-            const sourceValue = normalizeValue(req.body.source || req.body.origin_type || req.body.OrigenFuente);
-            const sourceNameValue = normalizeValue(req.body.source_name || req.body.sourceName || req.body.custom_source);
-            const referredByTypeValue = normalizeEnum(req.body.referred_by_type, REFERRED_TYPE_OPTIONS, null);
-            const referredByIdValue = req.body.referred_by_id !== undefined && req.body.referred_by_id !== null
-                ? Number(req.body.referred_by_id)
-                : null;
-            const assignedUserIdValue = req.body.assigned_to_user_id !== undefined && req.body.assigned_to_user_id !== null
-                ? Number(req.body.assigned_to_user_id)
-                : null;
+        if (!existing) return res.status(404).json({ error: 'Contacto no encontrado' });
 
-            if (fullNameValue !== null) {
-                upsertField('full_name', fullNameValue);
-                upsertField('NombreCompleto', fullNameValue);
-            }
-            if (phoneValue !== null) {
-                upsertField('mobile_phone', phoneValue);
-                upsertField('Telefono', phoneValue);
-            }
-            if (emailValue !== null) {
-                upsertField('Email', emailValue);
-            }
-            if (address1Value !== null) {
-                upsertField('address1', address1Value);
-                upsertField('Direccion', address1Value);
-            }
-            if (address2Value !== null) {
-                upsertField('address2', address2Value);
-            }
-            if (cityValue !== null) {
-                upsertField('city', cityValue);
-                upsertField('Ciudad', cityValue);
-            }
-            if (stateValue !== null) {
-                upsertField('state', stateValue);
-                upsertField('Estado', stateValue);
-            }
-            if (zipValue !== null) {
-                upsertField('zip_code', zipValue);
-                upsertField('Zipcode', zipValue);
-            }
-            if (countryValue !== null) {
-                upsertField('country', countryValue);
-                upsertField('Pais', countryValue);
-            }
-            if (maritalValue !== null) {
-                upsertField('marital_status', maritalValue);
-                upsertField('EstadoCivil', maritalValue);
-            }
-            if (homeOwnershipValue !== null) {
-                upsertField('home_ownership', homeOwnershipValue);
-            }
-            if (bothWorkValue !== null) {
-                upsertField('both_work', bothWorkValue);
-                upsertField('TrabajaActualmente', bothWorkValue);
-            }
-            if (knowsRoyalValue !== null) {
-                upsertField('knows_royal_prestige', knowsRoyalValue);
-            }
-            if (statusValue !== null) {
-                upsertField('contact_status', statusValue);
-            }
-            if (allowedValue !== null) {
-                upsertField('contact_allowed', allowedValue);
-            }
-            if (hasChildrenValue !== null) {
-                upsertField('has_children', hasChildrenValue);
-            }
-            if (childrenCountValue !== undefined) {
-                upsertField('children_count', childrenCountValue);
-            }
-            if (notesValue !== null) {
-                upsertField('notes', notesValue);
-            }
-            if (spouseNameValue !== null) {
-                upsertField('NombrePareja', spouseNameValue);
-            }
-            if (relationshipValue !== null) {
-                upsertField('relationship_to_referrer', relationshipValue);
-            }
-            if (originTypeValue !== null) {
-                upsertField('origin_type', originTypeValue);
-                upsertField('OrigenFuente', originTypeValue);
-            }
-            if (sourceValue !== null) {
-                upsertField('source', sourceValue);
-            }
-            if (sourceNameValue !== null) {
-                upsertField('source_name', sourceNameValue);
-            }
-            if (referredByTypeValue !== null) {
-                upsertField('referred_by_type', referredByTypeValue);
-            }
-            if (referredByIdValue !== null) {
-                upsertField('referred_by_id', referredByIdValue);
-                if (referredByTypeValue === 'CONTACTO') {
-                    upsertField('ReferidoPorId', referredByIdValue);
-                }
-            }
-            if (assignedUserIdValue !== null) {
-                upsertField('assigned_to_user_id', assignedUserIdValue);
-            }
+        const payload = {};
+        const setField = (column, value) => {
+            if (value !== null && value !== undefined) payload[column] = value;
+        };
 
-            if (fields.length === 0) {
-                return res.json({ message: 'Sin cambios' });
-            }
+        const fullNameValue = normalizeValue(req.body.full_name || req.body.NombreCompleto);
+        const phoneValue = normalizeValue(req.body.mobile_phone || req.body.Telefono);
+        const emailValue = normalizeValue(req.body.email || req.body.Email);
+        const address1Value = normalizeValue(req.body.address1 || req.body.Direccion);
+        const address2Value = normalizeValue(req.body.address2);
+        const cityValue = normalizeValue(req.body.city || req.body.Ciudad);
+        const stateValue = normalizeValue(req.body.state || req.body.Estado);
+        const zipValue = normalizeValue(req.body.zip_code || req.body.Zipcode);
+        const countryValue = normalizeValue(req.body.country || req.body.Pais);
 
-        const sql = `UPDATE Contactos SET ${fields.join(', ')}, UpdatedAt = CURRENT_TIMESTAMP WHERE ContactoID = ?`;
-        await db.prepare(sql).run(...values, req.params.id);
-        const updated = await db.prepare('SELECT * FROM Contactos WHERE ContactoID = ?').get(req.params.id);
+        const maritalValue = normalizeEnum(req.body.marital_status || req.body.EstadoCivil, MARITAL_OPTIONS, null);
+        const homeOwnershipValue = normalizeEnum(req.body.home_ownership, HOME_OWNERSHIP_OPTIONS, null);
+        const bothWorkValue = normalizeEnum(req.body.both_work || req.body.TrabajaActualmente, BOTH_WORK_OPTIONS, null);
+        const knowsRoyalValue = normalizeEnum(req.body.knows_royal_prestige, KNOWS_RP_OPTIONS, null);
+        const statusValue = normalizeEnum(req.body.contact_status, CONTACT_STATUS_OPTIONS, null);
+        const allowedValue = normalizeBoolean(req.body.contact_allowed, null);
+        const hasChildrenValue = normalizeBoolean(req.body.has_children, null);
+        const childrenCountValue = req.body.children_count !== undefined && req.body.children_count !== null && req.body.children_count !== ''
+            ? Number(req.body.children_count)
+            : req.body.children_count === '' ? null : undefined;
+        const notesValue = normalizeValue(req.body.notes);
+        const spouseNameValue = normalizeValue(req.body.spouse_name || req.body.NombrePareja);
+        const relationshipValue = normalizeValue(req.body.relationship_to_referrer);
+        const originTypeValue = normalizeValue(req.body.origin_type || req.body.OrigenFuente || req.body.source);
+        const sourceValue = normalizeValue(req.body.source || req.body.origin_type || req.body.OrigenFuente);
+        const sourceNameValue = normalizeValue(req.body.source_name || req.body.sourceName || req.body.custom_source);
+        const referredByTypeValue = normalizeEnum(req.body.referred_by_type, REFERRED_TYPE_OPTIONS, null);
+        const referredByIdValue = req.body.referred_by_id !== undefined && req.body.referred_by_id !== null
+            ? Number(req.body.referred_by_id)
+            : null;
+        const assignedUserIdValue = req.body.assigned_to_user_id !== undefined && req.body.assigned_to_user_id !== null
+            ? Number(req.body.assigned_to_user_id)
+            : null;
+
+        if (fullNameValue !== null) {
+            setField('full_name', fullNameValue);
+            setField('NombreCompleto', fullNameValue);
+        }
+        if (phoneValue !== null) {
+            setField('mobile_phone', phoneValue);
+            setField('Telefono', phoneValue);
+        }
+        if (emailValue !== null) {
+            setField('Email', emailValue);
+            setField('email', emailValue);
+        }
+        if (address1Value !== null) {
+            setField('address1', address1Value);
+            setField('Direccion', address1Value);
+        }
+        if (address2Value !== null) {
+            setField('address2', address2Value);
+        }
+        if (cityValue !== null) {
+            setField('city', cityValue);
+            setField('Ciudad', cityValue);
+        }
+        if (stateValue !== null) {
+            setField('state', stateValue);
+            setField('Estado', stateValue);
+        }
+        if (zipValue !== null) {
+            setField('zip_code', zipValue);
+            setField('Zipcode', zipValue);
+        }
+        if (countryValue !== null) {
+            setField('country', countryValue);
+            setField('Pais', countryValue);
+        }
+        if (maritalValue !== null) {
+            setField('marital_status', maritalValue);
+            setField('EstadoCivil', maritalValue);
+        }
+        if (homeOwnershipValue !== null) {
+            setField('home_ownership', homeOwnershipValue);
+        }
+        if (bothWorkValue !== null) {
+            setField('both_work', bothWorkValue);
+            setField('TrabajaActualmente', bothWorkValue);
+        }
+        if (knowsRoyalValue !== null) {
+            setField('knows_royal_prestige', knowsRoyalValue);
+        }
+        if (statusValue !== null) {
+            setField('contact_status', statusValue);
+        }
+        if (allowedValue !== null) {
+            setField('contact_allowed', allowedValue);
+        }
+        if (hasChildrenValue !== null) {
+            setField('has_children', hasChildrenValue);
+        }
+        if (childrenCountValue !== undefined) {
+            setField('children_count', childrenCountValue);
+        }
+        if (notesValue !== null) {
+            setField('notes', notesValue);
+        }
+        if (spouseNameValue !== null) {
+            setField('NombrePareja', spouseNameValue);
+        }
+        if (relationshipValue !== null) {
+            setField('relationship_to_referrer', relationshipValue);
+        }
+        if (originTypeValue !== null) {
+            setField('origin_type', originTypeValue);
+            setField('OrigenFuente', originTypeValue);
+        }
+        if (sourceValue !== null) {
+            setField('source', sourceValue);
+        }
+        if (sourceNameValue !== null) {
+            setField('source_name', sourceNameValue);
+        }
+        if (referredByTypeValue !== null) {
+            setField('referred_by_type', referredByTypeValue);
+        }
+        if (referredByIdValue !== null) {
+            setField('referred_by_id', referredByIdValue);
+            if (referredByTypeValue === 'CONTACTO') {
+                setField('ReferidoPorId', referredByIdValue);
+            }
+        }
+        if (assignedUserIdValue !== null) {
+            setField('assigned_to_user_id', assignedUserIdValue);
+        }
+
+        if (meta.columns && meta.columns.size > 0) {
+            const updatedAtColumn = resolveColumn(meta.columns, 'updatedat', 'UpdatedAt');
+            if (updatedAtColumn) {
+                setField(updatedAtColumn, new Date().toISOString());
+            }
+        }
+
+        const filteredPayload = filterPayload(meta.columns, payload);
+        if (!filteredPayload || Object.keys(filteredPayload).length === 0) {
+            return res.json({ message: 'Sin cambios' });
+        }
+
+        const { data: updated, error } = await supabase
+            .from(meta.tableName)
+            .update(filteredPayload)
+            .eq(idColumn, req.params.id)
+            .select('*')
+            .maybeSingle();
+
+        if (error) {
+            return res.status(500).json({ error: error.message });
+        }
+
         return res.json(updated);
     } catch (err) {
         res.status(500).json({ error: err.message });
@@ -595,6 +904,10 @@ router.put('/:id', checkRole('DISTRIBUIDOR', 'VENDEDOR', 'TELEMARKETING'), async
             referidoPorId,
             NombrePareja
         } = req.body;
+
+        const supabase = getSupabaseClient();
+        const meta = await getContactosMeta();
+        const idColumn = resolveColumn(meta.columns, 'contactoid', 'ContactoID');
 
         const fullNameValue = normalizeValue(full_name || nombreCompleto);
         const phoneValue = normalizeValue(mobile_phone || telefono);
@@ -702,8 +1015,30 @@ router.put('/:id', checkRole('DISTRIBUIDOR', 'VENDEDOR', 'TELEMARKETING'), async
             ClienteID: clienteId || null,
         };
 
-        const updateStatement = await buildContactoUpdate(db, updateValues);
-        await db.prepare(updateStatement.sql).run(...updateStatement.values, req.params.id);
+        if (meta.columns && meta.columns.size > 0) {
+            const updatedAtColumn = resolveColumn(meta.columns, 'updatedat', 'UpdatedAt');
+            if (updatedAtColumn) {
+                updateValues[updatedAtColumn] = new Date().toISOString();
+            }
+        }
+
+        const filteredUpdateValues = filterPayload(meta.columns, updateValues);
+        const { data, error } = await supabase
+            .from(meta.tableName)
+            .update(filteredUpdateValues)
+            .eq(idColumn, req.params.id)
+            .select(idColumn)
+            .maybeSingle();
+
+        if (error) {
+            const constraintError = buildContactosConstraintError(error);
+            if (constraintError) {
+                return res.status(400).json({ error: constraintError });
+            }
+            return res.status(500).json({ error: error.message });
+        }
+
+        if (!data) return res.status(404).json({ error: 'Contacto no encontrado' });
 
         res.json({ message: 'Contacto actualizado' });
     } catch (err) {
@@ -718,10 +1053,23 @@ router.put('/:id', checkRole('DISTRIBUIDOR', 'VENDEDOR', 'TELEMARKETING'), async
 // DELETE contacto (admin only)
 router.delete('/:id', checkRole('DISTRIBUIDOR'), async (req, res) => {
     try {
-        const existing = await db.prepare('SELECT ContactoID FROM Contactos WHERE ContactoID = ?').get(req.params.id);
-        if (!existing) return res.status(404).json({ error: 'Contacto no encontrado' });
+        const supabase = getSupabaseClient();
+        const meta = await getContactosMeta();
+        const idColumn = resolveColumn(meta.columns, 'contactoid', 'ContactoID');
 
-        await db.prepare('DELETE FROM Contactos WHERE ContactoID = ?').run(req.params.id);
+        const { data, error } = await supabase
+            .from(meta.tableName)
+            .delete()
+            .eq(idColumn, req.params.id)
+            .select(idColumn)
+            .maybeSingle();
+
+        if (error) {
+            return res.status(500).json({ error: error.message });
+        }
+
+        if (!data) return res.status(404).json({ error: 'Contacto no encontrado' });
+
         res.json({ message: 'Contacto eliminado' });
     } catch (err) {
         res.status(500).json({ error: err.message });

@@ -119,7 +119,6 @@ const legacyRoutePaths = [
     '/api/usuarios',
     '/api/users',
     '/api/programas',
-    '/api/contactos',
     '/api/contacts',
     '/api/catalogos',
     '/api/referrals',
