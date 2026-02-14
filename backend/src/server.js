@@ -2,11 +2,15 @@ const express = require('express');
 const cors = require('cors');
 const path = require('path');
 const fs = require('fs');
-const db = require('./config/database');
 const { getSupabaseClient } = require('./services/SupabaseClient');
 require('dotenv').config();
 
 const app = express();
+const getSupabaseEnvStatus = () => ({
+    supabaseUrlPresent: Boolean(process.env.SUPABASE_URL),
+    supabaseKeyPresent: Boolean(process.env.SUPABASE_SERVICE_ROLE_KEY),
+    corsOrigin: process.env.CORS_ORIGIN || '',
+});
 const configuredOrigins = (process.env.CORS_ORIGIN || '')
     .split(',')
     .map((origin) => origin.trim())
@@ -160,7 +164,14 @@ if (fs.existsSync(distPath)) {
 }
 
 app.listen(PORT, () => {
+    const envStatus = getSupabaseEnvStatus();
     console.log(`Server running on port ${PORT}`);
     console.log(`Environment: ${process.env.NODE_ENV}`);
-    console.log(`Database: ${process.env.DB_PATH}`);
+    console.log(
+        `[ENV] supabaseUrlPresent=${envStatus.supabaseUrlPresent} ` +
+        `supabaseKeyPresent=${envStatus.supabaseKeyPresent} ` +
+        `corsOrigin=${envStatus.corsOrigin || '(not set)'}`
+    );
+    console.log('Database: Supabase HTTPS (PostgREST)');
+    console.log('Legacy database.js disabled (no TCP connection).');
 });
