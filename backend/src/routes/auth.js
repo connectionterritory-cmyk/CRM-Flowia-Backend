@@ -4,9 +4,8 @@ const bcrypt = require('bcryptjs');
 const crypto = require('crypto');
 const auth = require('../middleware/auth');
 const AuthService = require('../services/AuthService');
-const { getUsuarioByCodigo } = require('../services/SupabaseClient');
+const { getSupabaseClient, getUsuarioByCodigo } = require('../services/SupabaseClient');
 const EmailService = require('../services/EmailService');
-const db = require('../config/database'); // Direct DB access for quick token update might be needed if not in AuthService
 
 const hashToken = (token) => crypto.createHash('sha256').update(token).digest('hex');
 const resolveAppBaseUrl = () => process.env.APP_BASE_URL || process.env.FRONTEND_URL || 'http://localhost:5173';
@@ -28,6 +27,7 @@ const logLoginError = (code, error, context = {}) => {
         ...context,
     });
 };
+
 router.post('/login', async (req, res) => {
     const { codigo, password } = req.body;
 
@@ -48,44 +48,77 @@ router.post('/login', async (req, res) => {
         return res.status(401).json({ error: 'Credenciales invalidas' });
     }
 
-    const isActive = usuario.is_active === undefined || usuario.is_active === null
+    // Handle both lowercase and legacy casing
+    const isActiveVal = usuario.is_active !== undefined ? usuario.is_active : usuario.Activo;
+    const isActive = isActiveVal === undefined || isActiveVal === null
         ? true
-        : Number(usuario.is_active) === 1;
+        : Number(isActiveVal) === 1 || isActiveVal === true;
 
     if (!isActive) {
         return res.status(403).json({ error: 'Usuario inactivo' });
     }
 
-    if (!usuario.password_hash || typeof usuario.password_hash !== 'string') {
+    const passwordHash = usuario.password_hash || usuario.Password || usuario.password;
+
+    if (!passwordHash || typeof passwordHash !== 'string') {
         return res.status(409).json({ error: 'Password no configurado', code: 'AUTH_LOGIN_PASSWORD_MISSING' });
     }
 
     let isValid = false;
     try {
-        isValid = await bcrypt.compare(password, usuario.password_hash);
+        isValid = await bcrypt.compare(password, passwordHash);
     } catch (error) {
-        return res.status(409).json({ error: 'Password no configurado', code: 'AUTH_LOGIN_PASSWORD_MISSING' });
+        return res.status(409).json({ error: 'Error validando password', code: 'AUTH_LOGIN_PASSWORD_ERROR' });
     }
 
     if (!isValid) {
         return res.status(401).json({ error: 'Credenciales invalidas' });
     }
 
-    const token = AuthService.createToken({
-        UsuarioID: usuario.codigo,
-        Rol: usuario.rol,
-        Codigo: usuario.codigo,
-    });
+    const userId = usuario.usuarioid || usuario.UsuarioID;
+    if (!userId) {
+        return res.status(500).json({ error: 'Usuario sin identificador' });
+    }
+
+    // Normalize user object for Token creation
+    const normalizedUser = {
+        UsuarioID: userId,
+        Rol: usuario.rol || usuario.Rol,
+        Codigo: usuario.codigo || usuario.Codigo,
+    };
+
+    const token = AuthService.createToken(normalizedUser);
     const expiresAt = AuthService.getTokenExpiry(token);
+
+    try {
+        await AuthService.createSession({
+            userId,
+            token,
+            ip: req.ip,
+            userAgent: req.get('user-agent'),
+            expiresAt,
+        });
+        await AuthService.updateLastAccess(userId);
+        await AuthService.logAudit({
+            usuarioId: userId,
+            accion: 'LOGIN',
+            entidad: 'Usuarios',
+            entidadId: userId,
+            ip: req.ip,
+        });
+    } catch (error) {
+        console.error('Login session error:', error);
+        return res.status(500).json({ error: 'Error al iniciar sesion' });
+    }
 
     return res.json({
         token,
         expiresAt,
         user: {
-            codigo: usuario.codigo,
-            rol: usuario.rol,
-            role: usuario.rol,
-            roles: usuario.rol ? [usuario.rol] : [],
+            codigo: normalizedUser.Codigo,
+            rol: normalizedUser.Rol,
+            role: normalizedUser.Rol,
+            roles: normalizedUser.Rol ? [normalizedUser.Rol] : [],
         },
     });
 });
@@ -93,15 +126,19 @@ router.post('/login', async (req, res) => {
 router.post('/logout', auth, async (req, res) => {
     try {
         await AuthService.revokeSession(req.token);
-        await AuthService.logAudit({
-            usuarioId: req.user.UsuarioID,
-            accion: 'LOGOUT',
-            entidad: 'Usuarios',
-            entidadId: req.user.UsuarioID,
-            ip: req.ip,
-        });
+        // req.user might be undefined if auth middleware failed, but it shouldn't reach here.
+        if (req.user) {
+            await AuthService.logAudit({
+                usuarioId: req.user.UsuarioID || req.user.userId, // JWT payload has userId
+                accion: 'LOGOUT',
+                entidad: 'Usuarios',
+                entidadId: req.user.UsuarioID || req.user.userId,
+                ip: req.ip,
+            });
+        }
         return res.json({ message: 'Sesion cerrada' });
     } catch (error) {
+        console.error('Logout error:', error);
         return res.status(500).json({ error: 'Error al cerrar sesion' });
     }
 });
@@ -112,30 +149,35 @@ router.get('/me', auth, (req, res) => {
 
 router.post('/cambiar-password', auth, async (req, res) => {
     const { currentPassword, newPassword } = req.body;
+    const userId = req.user.UsuarioID || req.user.userId;
 
     if (!currentPassword || !newPassword) {
         return res.status(400).json({ error: 'Password actual y nuevo requeridos' });
     }
 
     try {
-        const user = await AuthService.getUserById(req.user.UsuarioID);
+        const user = await AuthService.getUserById(userId);
+        if (!user) return res.status(404).json({ error: 'Usuario no encontrado' });
+
         const passwordHash = user.password_hash || user.Password;
         const isValid = passwordHash ? await bcrypt.compare(currentPassword, passwordHash) : false;
         if (!isValid) {
             return res.status(401).json({ error: 'Password actual incorrecto' });
         }
 
-        await AuthService.updatePassword(req.user.UsuarioID, newPassword);
+        const realUserId = user.UsuarioID || user.usuarioid;
+        await AuthService.updatePassword(realUserId, newPassword);
         await AuthService.logAudit({
-            usuarioId: req.user.UsuarioID,
+            usuarioId: realUserId,
             accion: 'CAMBIAR_PASSWORD',
             entidad: 'Usuarios',
-            entidadId: req.user.UsuarioID,
+            entidadId: realUserId,
             ip: req.ip,
         });
 
         return res.json({ message: 'Password actualizado' });
     } catch (error) {
+        console.error('Change password error:', error);
         return res.status(500).json({ error: 'Error al cambiar password' });
     }
 });
@@ -145,26 +187,29 @@ router.post('/forgot-password', async (req, res) => {
     if (!email) return res.status(400).json({ error: 'Email requerido' });
 
     try {
-        // Find user by Email
-        const stmt = db.prepare('SELECT UsuarioID, Nombre FROM Usuarios WHERE Email = ?');
-        const user = await stmt.get(email);
+        const supabase = getSupabaseClient();
+        const { data: user } = await supabase
+            .from('usuarios')
+            .select('usuarioid, nombre, UsuarioID, Nombre') // requesting both to be safe
+            .eq('email', email)
+            .maybeSingle();
 
         if (!user) {
-            // Return success even if not found to prevent enumeration
             return res.json({ message: 'Si el email existe, se enviará un enlace.' });
         }
 
         const token = crypto.randomBytes(32).toString('hex');
         const tokenHash = hashToken(token);
         const expiry = new Date(Date.now() + 60 * 60 * 1000).toISOString(); // 60 min
+        const userId = user.UsuarioID || user.usuarioid;
 
-        const updateStmt = db.prepare(`
-            UPDATE Usuarios
-            SET reset_token_hash = ?,
-                reset_expires_at = ?
-            WHERE UsuarioID = ?
-        `);
-        await updateStmt.run(tokenHash, expiry, user.UsuarioID);
+        await supabase
+            .from('usuarios')
+            .update({
+                reset_token_hash: tokenHash,
+                reset_expires_at: expiry
+            })
+            .eq('usuarioid', userId);
 
         const resetLink = `${resolveAppBaseUrl()}/reset-password?token=${token}`;
 
@@ -185,28 +230,33 @@ router.post('/reset-password', async (req, res) => {
     }
 
     try {
-        // Find user with valid token
         const tokenHash = hashToken(token);
-        const stmt = db.prepare('SELECT UsuarioID FROM Usuarios WHERE reset_token_hash = ? AND reset_expires_at > ?');
-        const user = await stmt.get(tokenHash, new Date().toISOString());
+        const supabase = getSupabaseClient();
+
+        const { data: user } = await supabase
+            .from('usuarios')
+            .select('usuarioid, UsuarioID')
+            .eq('reset_token_hash', tokenHash)
+            .gt('reset_expires_at', new Date().toISOString())
+            .maybeSingle();
 
         if (!user) {
             return res.status(400).json({ error: 'Token inválido o expirado' });
         }
 
-        // Update Password and Clear Token
-        // Reuse AuthService logic ideally, but direct for now
         const hashedPassword = await bcrypt.hash(newPassword, 10);
-        const updateStmt = db.prepare(`
-            UPDATE Usuarios
-            SET password_hash = ?,
-                Password = COALESCE(Password, ?),
-                reset_token_hash = NULL,
-                reset_expires_at = NULL,
-                UpdatedAt = CURRENT_TIMESTAMP
-            WHERE UsuarioID = ?
-        `);
-        await updateStmt.run(hashedPassword, hashedPassword, user.UsuarioID);
+        const userId = user.UsuarioID || user.usuarioid;
+
+        await supabase
+            .from('usuarios')
+            .update({
+                password_hash: hashedPassword,
+                password: hashedPassword, // legacy
+                reset_token_hash: null,
+                reset_expires_at: null,
+                updatedat: new Date().toISOString()
+            })
+            .eq('usuarioid', userId);
 
         return res.json({ message: 'Contraseña restablecida correctamente. Ya puedes iniciar sesión.' });
     } catch (error) {
@@ -224,26 +274,34 @@ router.post('/accept-invite', async (req, res) => {
 
     try {
         const tokenHash = hashToken(token);
-        const stmt = db.prepare('SELECT UsuarioID FROM Usuarios WHERE invite_token_hash = ? AND invite_expires_at > ?');
-        const user = await stmt.get(tokenHash, new Date().toISOString());
+        const supabase = getSupabaseClient();
+
+        const { data: user } = await supabase
+            .from('usuarios')
+            .select('usuarioid, UsuarioID')
+            .eq('invite_token_hash', tokenHash)
+            .gt('invite_expires_at', new Date().toISOString())
+            .maybeSingle();
 
         if (!user) {
             return res.status(400).json({ error: 'Token inválido o expirado' });
         }
 
         const hashedPassword = await bcrypt.hash(newPassword, 10);
-        const updateStmt = db.prepare(`
-            UPDATE Usuarios
-            SET password_hash = ?,
-                Password = COALESCE(Password, ?),
-                invite_token_hash = NULL,
-                invite_expires_at = NULL,
-                is_active = 1,
-                Activo = 1,
-                UpdatedAt = CURRENT_TIMESTAMP
-            WHERE UsuarioID = ?
-        `);
-        await updateStmt.run(hashedPassword, hashedPassword, user.UsuarioID);
+        const userId = user.UsuarioID || user.usuarioid;
+
+        await supabase
+            .from('usuarios')
+            .update({
+                password_hash: hashedPassword,
+                password: hashedPassword,
+                invite_token_hash: null,
+                invite_expires_at: null,
+                is_active: 1,
+                activo: 1, // legacy
+                updatedat: new Date().toISOString()
+            })
+            .eq('usuarioid', userId);
 
         return res.json({ message: 'Cuenta activada. Ya puedes iniciar sesión.' });
     } catch (error) {

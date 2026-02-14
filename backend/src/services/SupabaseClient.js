@@ -42,7 +42,7 @@ const getUsuarioByCodigo = async (codigo) => {
     const supabase = getSupabaseClient();
     const { data, error } = await supabase
         .from('usuarios')
-        .select('codigo,password_hash,is_active,rol')
+        .select('usuarioid,codigo,password_hash,password,is_active,rol,activo')
         .eq('codigo', codigo)
         .maybeSingle();
 
