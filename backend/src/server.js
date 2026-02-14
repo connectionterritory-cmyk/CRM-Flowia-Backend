@@ -71,7 +71,12 @@ const requireDiagToken = (req, res, next) => {
 
 // Routes (Placeholder)
 app.get('/api/health', (req, res) => {
-    res.json({ status: 'OK', timestamp: new Date() });
+    const envStatus = getSupabaseEnvStatus();
+    res.json({
+        status: 'OK',
+        timestamp: new Date(),
+        supabaseConfigured: envStatus.supabaseUrlPresent && envStatus.supabaseKeyPresent,
+    });
 });
 
 app.get('/api/diag/health-db', requireDiagToken, async (req, res) => {
@@ -103,6 +108,36 @@ app.get('/api/diag/health-db', requireDiagToken, async (req, res) => {
         return res.json({ ok: true, db: 'down', latency_ms: Date.now() - startedAt });
     }
 });
+const legacyDisabledRouter = require('./routes/legacyDisabled');
+const legacyRoutePaths = [
+    '/api/clientes',
+    '/api/cuentas',
+    '/api/ordenes',
+    '/api/transacciones',
+    '/api/notas',
+    '/api/mensajes',
+    '/api/dashboard',
+    '/api/usuarios',
+    '/api/users',
+    '/api/programas',
+    '/api/contactos',
+    '/api/contacts',
+    '/api/catalogos',
+    '/api/referrals',
+    '/api/programs',
+    '/api/asesores',
+    '/api/prospects',
+    '/api/oportunidades',
+    '/api/opportunities',
+    '/api/pipeline',
+    '/api/origenes',
+    '/api/import',
+];
+
+legacyRoutePaths.forEach((routePath) => {
+    app.use(routePath, legacyDisabledRouter);
+});
+
 // Import Routes
 const clientesRouter = require('./routes/clientes');
 const cuentasRouter = require('./routes/cuentas');
