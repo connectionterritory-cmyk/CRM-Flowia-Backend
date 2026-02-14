@@ -110,7 +110,6 @@ app.get('/api/diag/health-db', requireDiagToken, async (req, res) => {
 });
 const legacyDisabledRouter = require('./routes/legacyDisabled');
 const legacyRoutePaths = [
-    '/api/clientes',
     '/api/cuentas',
     '/api/ordenes',
     '/api/transacciones',
