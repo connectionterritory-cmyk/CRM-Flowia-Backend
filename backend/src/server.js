@@ -3,13 +3,34 @@ const cors = require('cors');
 const path = require('path');
 const fs = require('fs');
 const db = require('./config/database');
+const { getSupabaseClient } = require('./services/SupabaseClient');
 require('dotenv').config();
 
 const app = express();
-app.use(cors({
-    origin: '*',
-    credentials: true
-}));
+const configuredOrigins = (process.env.CORS_ORIGIN || '')
+    .split(',')
+    .map((origin) => origin.trim())
+    .filter(Boolean);
+const defaultAllowedOrigins = ['https://crm.flowiadigital.com'];
+if (process.env.NODE_ENV !== 'production') {
+    defaultAllowedOrigins.push('http://localhost:5173', 'http://localhost:3000');
+}
+const allowedOrigins = Array.from(new Set([...defaultAllowedOrigins, ...configuredOrigins]));
+
+const corsOptions = {
+    origin: (origin, callback) => {
+        if (!origin) return callback(null, false);
+        if (allowedOrigins.includes(origin)) return callback(null, origin);
+        return callback(null, false);
+    },
+    credentials: true,
+    methods: ['GET', 'HEAD', 'PUT', 'PATCH', 'POST', 'DELETE', 'OPTIONS'],
+    allowedHeaders: ['Content-Type', 'Authorization'],
+    optionsSuccessStatus: 204,
+};
+
+app.use(cors(corsOptions));
+app.options('*', cors(corsOptions));
 const PORT = process.env.PORT || 3000;
 if (process.env.NODE_ENV !== 'production') {
     app.use((req, res, next) => {
@@ -28,11 +49,56 @@ if (process.env.NODE_ENV !== 'production') {
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
+const requireDiagToken = (req, res, next) => {
+    const expected = process.env.ADMIN_DIAG_TOKEN;
+    if (!expected) {
+        return res.status(503).json({ error: 'Diagnostico no configurado' });
+    }
+    const authHeader = req.get('authorization') || '';
+    const bearerToken = authHeader.startsWith('Bearer ')
+        ? authHeader.slice(7).trim()
+        : null;
+    const token = req.get('x-admin-token') || req.query.token || bearerToken;
+    if (!token || token !== expected) {
+        return res.status(401).json({ error: 'No autorizado' });
+    }
+    return next();
+};
+
 // Routes (Placeholder)
 app.get('/api/health', (req, res) => {
     res.json({ status: 'OK', timestamp: new Date() });
 });
 
+app.get('/api/diag/health-db', requireDiagToken, async (req, res) => {
+    const startedAt = Date.now();
+    try {
+        const supabase = getSupabaseClient();
+        const { error } = await supabase
+            .from('usuarios')
+            .select('codigo')
+            .limit(1);
+
+        if (error) {
+            throw error;
+        }
+
+        return res.json({
+            ok: true,
+            db: 'up',
+            latency_ms: Date.now() - startedAt,
+        });
+    } catch (error) {
+        console.error('[DIAG_HEALTH_DB_FAIL]', {
+            message: error?.message,
+            errorCode: error?.code,
+            detail: error?.detail,
+            status: error?.status,
+            stack: error?.stack,
+        });
+        return res.json({ ok: true, db: 'down', latency_ms: Date.now() - startedAt });
+    }
+});
 // Import Routes
 const clientesRouter = require('./routes/clientes');
 const cuentasRouter = require('./routes/cuentas');

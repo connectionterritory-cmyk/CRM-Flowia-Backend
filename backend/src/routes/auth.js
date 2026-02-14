@@ -4,12 +4,30 @@ const bcrypt = require('bcryptjs');
 const crypto = require('crypto');
 const auth = require('../middleware/auth');
 const AuthService = require('../services/AuthService');
+const { getUsuarioByCodigo } = require('../services/SupabaseClient');
 const EmailService = require('../services/EmailService');
 const db = require('../config/database'); // Direct DB access for quick token update might be needed if not in AuthService
 
 const hashToken = (token) => crypto.createHash('sha256').update(token).digest('hex');
 const resolveAppBaseUrl = () => process.env.APP_BASE_URL || process.env.FRONTEND_URL || 'http://localhost:5173';
 
+const deriveLoginErrorCode = (error) => {
+    if (error?.code === 'SUPABASE_ENV_MISSING') return 'AUTH_LOGIN_500_ENV';
+    if (error?.status) return `AUTH_LOGIN_500_SUPABASE_${error.status}`;
+    return 'AUTH_LOGIN_500_SUPABASE';
+};
+
+const logLoginError = (code, error, context = {}) => {
+    console.error(`[${code}] Login error`, {
+        message: error?.message,
+        errorCode: error?.code,
+        detail: error?.detail || error?.details,
+        status: error?.status,
+        hint: error?.hint,
+        stack: error?.stack,
+        ...context,
+    });
+};
 router.post('/login', async (req, res) => {
     const { codigo, password } = req.body;
 
@@ -17,29 +35,59 @@ router.post('/login', async (req, res) => {
         return res.status(400).json({ error: 'Codigo y password son requeridos' });
     }
 
+    let usuario;
     try {
-        const tableCheck = await db.prepare("SELECT to_regclass('public.usuarios') as name").get();
-        if (!tableCheck?.name) {
-            return res.status(500).json({ error: 'Base de datos no inicializada. Ejecuta las migraciones.' });
-        }
-
-        const result = await AuthService.login({
-            codigo,
-            password,
-            ip: req.ip,
-            userAgent: req.get('user-agent'),
-        });
-
-        if (!result) {
-            return res.status(401).json({ error: 'Credenciales invalidas' });
-        }
-
-        return res.json(result);
+        usuario = await getUsuarioByCodigo(codigo);
     } catch (error) {
-        console.error('Login error:', error);
-        const detail = process.env.NODE_ENV === 'development' ? error.message : undefined;
-        return res.status(500).json({ error: 'Error al iniciar sesion', detail });
+        const code = deriveLoginErrorCode(error);
+        logLoginError(code, error, { codigo, ip: req.ip, userAgent: req.get('user-agent') });
+        return res.status(500).json({ error: 'Error al iniciar sesion', code: 'AUTH_LOGIN_500' });
     }
+
+    if (!usuario) {
+        return res.status(401).json({ error: 'Credenciales invalidas' });
+    }
+
+    const isActive = usuario.is_active === undefined || usuario.is_active === null
+        ? true
+        : Number(usuario.is_active) === 1;
+
+    if (!isActive) {
+        return res.status(403).json({ error: 'Usuario inactivo' });
+    }
+
+    if (!usuario.password_hash || typeof usuario.password_hash !== 'string') {
+        return res.status(409).json({ error: 'Password no configurado', code: 'AUTH_LOGIN_PASSWORD_MISSING' });
+    }
+
+    let isValid = false;
+    try {
+        isValid = await bcrypt.compare(password, usuario.password_hash);
+    } catch (error) {
+        return res.status(409).json({ error: 'Password no configurado', code: 'AUTH_LOGIN_PASSWORD_MISSING' });
+    }
+
+    if (!isValid) {
+        return res.status(401).json({ error: 'Credenciales invalidas' });
+    }
+
+    const token = AuthService.createToken({
+        UsuarioID: usuario.codigo,
+        Rol: usuario.rol,
+        Codigo: usuario.codigo,
+    });
+    const expiresAt = AuthService.getTokenExpiry(token);
+
+    return res.json({
+        token,
+        expiresAt,
+        user: {
+            codigo: usuario.codigo,
+            rol: usuario.rol,
+            role: usuario.rol,
+            roles: usuario.rol ? [usuario.rol] : [],
+        },
+    });
 });
 
 router.post('/logout', auth, async (req, res) => {
